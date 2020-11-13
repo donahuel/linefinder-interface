@@ -1,6 +1,8 @@
 # linefinder-interface
 An interface built in Flask that allows users to parse through LIGO 'line' data.
+
 This project has been in the works since June of 2020--previous versions of the readme file are found in the readme archives folder.
+
 Authors: Jay Tasson, Vincent He, Larry Donahue, Malachy Bloom
 
 Current README [11/12/2020]:
