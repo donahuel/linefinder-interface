@@ -1,0 +1,18 @@
+Authors: Jay Tasson, Vincent He, Larry Donahue
+Last Updated: 7/9/2020, 14:04 CDT
+
+This directory is used to populate a SQLite database with information about gravitational wave lines gathered from the LIGO collaboration and search said database for more specificity. As of the time of writing, the search tool is a simple web page that returns a result and the database is only populated with a few files' worth of lines but supports the addition of more.
+
+The first step to using this directory is to run init.py, which populates the database line_finder.db with line objects of a coherence greater than 0.95. This threshold can be adjusted in the init.py program. It is important that, when running init.py, the correct data directory is chosen. The data directory should have subdirectories for each week of data collected that each contain .mat files for various channels.
+
+After the database is populated, app.py can be used to search it. As of the time of writing, the search tool can search five aspects of lines--the run, the frequency, the coherence, the week, and the channel. Once the desired filters are added, hitting the 'search' button on the webpage will return lines matching the filters on a new page. There is no functionality on this page yet, so in order to run another query simply open up the page again by reentering the web address.
+
+Future additions to this program will include:
+ - RESULTS: Functionality on the results page to go back to the search form
+ - RESULTS: Ability to sort results/generate results in a table		
+ - RESULTS: Ability to generate plot off of data [potentially not feasible]
+ - RESULTS: Make line list downloadable
+ - SEARCH: Having two fields for frequency (upper bound, lower bound)
+ - SEARCH: Having two fields for coherence (upper bound, lower bound)
+ - GENERAL: Addition of CSS to 'pretty up' the webpage
+ - GENERAL: Ability to visit page off of localhost
