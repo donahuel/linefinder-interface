@@ -1,14 +1,15 @@
 #This file searches the database populated by init.py and displays the results on a webpage.
 #Authors: Vincent He, Larry Donahue
 
-from flask import Flask, render_template, url_for, flash, request, redirect
+from flask import Flask, render_template, url_for, flash, request, redirect, Response
 from flask_sqlalchemy import SQLAlchemy
 from wtforms import Form, StringField, validators
+import csv
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///line_finder.db'
 db = SQLAlchemy(app)
-
+    
 #The database itself, this is the class containing information about each row
 class Line(db.Model):
     id = db.Column(db.Integer, primary_key=True) #Unique ID for each line
@@ -17,10 +18,10 @@ class Line(db.Model):
     channel = db.Column(db.String(50)) #Channel for each line (e.g. L1_PEM-CS_MAG_LVEA_VERTEX_Z)
     freq = db.Column(db.Float) #Frequency for each line
     coh = db.Column(db.Float) #Coherence for each line
-    
+   
     def __repr__(self):
-        return f"('{self.run}', '{self.week}','{self.channel}': '{self.freq}', '{self.coh}')"
-
+        return f"{self.run}/{self.week}/{self.channel}/{self.freq}/{self.coh}"
+    
 #Search form
 class SearchForm(Form):
     run = StringField('Run:')
@@ -31,10 +32,12 @@ class SearchForm(Form):
     cohub = StringField('Coherence upper bound:')
     cohlb = StringField('Coherence lower bound:')
 
+dLines = []
+    
 @app.route("/", methods=['GET', 'POST'])
 def index():
     searchForm = SearchForm(request.form)
-    lines = Line.query.all() #Set of all lines which will be cut by the searches
+    lines = Line.query.all() #Set of all lines which will be cut by the searches  
 
     if request.method == 'POST' and searchForm.validate():
 
@@ -94,15 +97,34 @@ def index():
                 else: #...by the first 3 mutually exclusive statements passing, this means both coherence queries are blank. And thus...
                     coCheck = True #...the coherence check passes.
             if coCheck: #If all checks are passed...
-                dlines.append(l) #Add line to desired lines
+                dlines.append(l) #Add line to desired lines\ 
+
+        global dLines
+        dLines = dlines
+        print(dLines)
 
         return render_template('lineresult.html', dlines=dlines)
 
     if request.method == 'GET':
-        return render_template('lineform.html', form=searchForm, errormessage="")
+        return render_template('lineform.html', form=searchForm, errormessage="", helpmessage="", tries=1)
 
     else:
         "Something went wrong."
+
+
+@app.route("/getPlotCSV")
+def getPlotCSV():
+    
+
+    csv = str(dLines).encode()
+    
+
+    return Response(
+        csv, 
+        mimetype="text/csv",
+        headers={"Content-disposition":
+                 "attachment; filename=myplot.csv"})
+
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+{% from "_formhelper.html" import render_field %}
+
+<head>
+  <title>Line Search</title>
+  <meta charset = "UTF-8">
+</head>
+
+<h2>Line Search:</p></h2>
+
+<b><p style="color:red">{{ errormessage }}</p></b>
+<i><p style="color:red">{{ helpmessage }}</p></i>
+
+<form method=post>
+    <dl>
+      <table>
+      {{ render_field(form.run) }}
+      {{ render_field(form.week) }}
+      {{ render_field(form.channel) }}
+      {{ render_field(form.frequb) }}
+      {{ render_field(form.freqlb) }}
+      {{ render_field(form.cohub) }}
+      {{ render_field(form.cohlb) }}
+      </table>
+    </dl>
+    <p><input type=submit value=Search></p>
+
+</form>
+</html>

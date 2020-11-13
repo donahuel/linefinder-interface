@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<h2>Lines Matching Search Results: </h2>
+
+<head>
+    <link rel="icon" type="image/png" href="C:\Users\test_program_normalized\test_program_normalized\templates\favicon.ico.jpg" />
+    <title>Line Results</title>
+    <meta charset = "UTF-8">
+  </head>
+
+<table class="sortable">
+    <thead>
+        <tr>
+            <th>
+            #
+            </th>
+            <th>
+            Run
+            </th>
+            <th>
+            Week
+            </th>
+            <th>
+            Channel
+            </th>
+            <th>
+            Frequency
+            </th>
+            <th>
+            Coherence
+            </th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+        {% for line in dlines %}
+        <tr class="item">
+        <td>
+            {{ line.id }}
+        </td>
+        <td>
+            {{ line.run }}
+        </td>
+        <td>
+            {{ line.week }}
+        </td>
+        <td>
+            {{ line.channel }}
+        </td>
+        <td>
+            {{ line.freq }}
+        </td>
+        <td>
+            {{ line.coh }}
+        </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<body>
+    <p></p>
+    <a href="/getPlotCSV">Download Results</a>
+    </body>
+<br>
+</html>
