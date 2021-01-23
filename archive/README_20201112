@@ -1,0 +1,18 @@
+# linefinder-interface
+An interface built in Flask that allows users to parse through LIGO 'line' data.
+
+This project has been in the works since June of 2020--previous versions of the readme file are found in the readme archives folder.
+
+Authors: Jay Tasson, Vincent He, Larry Donahue, Malachy Bloom
+
+Current README [11/12/2020]:
+This directory is used to populate a SQLite database with information about gravitational wave lines gathered from the LIGO collaboration and search said database for more specificity. As of the time of writing, the search tool is a simple web page that returns a result and the database is only populated with a few files' worth of lines but supports the addition of more.
+
+The first step to using this directory is to run init.py, which populates the database line_finder.db with line objects from files stored in the 'data' directory. It is important that, when running init.py, the correct data directory is chosen. The data directory should have subdirectories for each week of data collected that each contain .mat files for various channels.
+
+After the database is populated, app.py can be used to search it. As of the time of writing, the search tool can search five aspects of lines--the run, the frequency, the coherence, the week, and the channel. The frequency and coherence fields can be sorted by bound. Once the desired filters are added, hitting the 'search' button on the webpage will return lines matching the filters on a new page. There is no functionality on this page, so in order to run another query simply open up the page again by hitting 'back' on the browser. Users are also able to download the results in a .csv file by clicking the "Download Results" link at the bottom of the page.
+
+Future additions to this program will include:
+ - RESULTS: Ability to sort results
+ - GENERAL: Addition of CSS to 'pretty up' the webpage
+ - GENERAL: Ability to visit page off of localhost by uploading it to Carleton College's Virgo Machine.
