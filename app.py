@@ -116,9 +116,12 @@ def index():
 def getPlotCSV():
     
 
-    csv = str(dLines).encode()
+    csv = str('Run,') + str('Week,') + str('Channel,') + str('Frequency,') + str('Coherence') + '\n'
     
-
+    for line in dLines:
+        csv = csv + str(line) + '\n'
+    csv = csv.encode()
+    
     return Response(
         csv, 
         mimetype="text/csv",
