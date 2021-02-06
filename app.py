@@ -64,10 +64,10 @@ def index():
             fqCheck = False
             coCheck = False
 
-            if searchForm.run.data == l.run or len(searchForm.run.data) == 0: #If run matches search query OR run field is empty (no run specified)...
+            if searchForm.run.data in l.run or len(searchForm.run.data) == 0: #If run matches search query OR run field is empty (no run specified)...
                 rnCheck = True #...pass run check.
             if rnCheck: #If run check is passed...
-                if searchForm.week.data == l.week or len(searchForm.week.data) == 0: #...and week matches search query OR week field is empty...
+                if searchForm.week.data in l.week or len(searchForm.week.data) == 0: #...and week matches search query OR week field is empty...
                     wkCheck = True #...pass week check.
             if wkCheck: #If week check (and therefore run check) are passed...
                 if searchForm.channel.data in l.channel or searchForm.channel.data.upper() in l.channel or len(searchForm.channel.data) == 0: #...and channel matches search query OR channel field is empty...
@@ -98,10 +98,29 @@ def index():
                     coCheck = True #...the coherence check passes.
             if coCheck: #If all checks are passed...
                 dlines.append(l) #Add line to desired lines\ 
+                
+        global run
+        run = searchForm.run.data
+
+        global week
+        week = searchForm.week.data
+
+        global channel
+        channel = searchForm.channel.data
+
+        global freqLB
+        freqLB = searchForm.freqlb.data
+        global freqUB
+        freqUB = searchForm.frequb.data
+
+        global cohLB
+        cohLB = searchForm.cohlb.data
+        global cohUB
+        cohUB = searchForm.cohub.data
 
         global dLines
         dLines = dlines
-        print(dLines)
+
 
         return render_template('lineresult.html', dlines=dlines)
 
@@ -116,7 +135,8 @@ def index():
 def getPlotCSV():
     
 
-    csv = str('Run,') + str('Week,') + str('Channel,') + str('Frequency,') + str('Coherence') + '\n'
+    csv = str('Run: ' + run + ',') + str('Week: ' + week + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
+    
     
     for line in dLines:
         csv = csv + str(line) + '\n'
