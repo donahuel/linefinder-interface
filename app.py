@@ -99,7 +99,7 @@ def index():
             if coCheck: #If all checks are passed...
                 dlines.append(l) #Add line to desired lines\ 
                 
-        global run
+        global run                  #Global variables used to specify search in csv file
         run = searchForm.run.data
 
         global week
