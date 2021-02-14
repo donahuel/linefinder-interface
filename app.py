@@ -56,6 +56,9 @@ def index():
             if float(searchForm.cohub.data) < float(searchForm.cohlb.data):
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Lower bound of coherence must be less than or equal to upper bound.")
 
+        stringListSortedBy = []
+        id = 0    
+            
         for l in lines: #For each line...
             #Set checks for each field to false
             rnCheck = False
@@ -99,6 +102,36 @@ def index():
             if coCheck: #If all checks are passed...
                 dlines.append(l) #Add line to desired lines\ 
                 
+                
+                sortedBy = []
+                
+                for lines in dlines:
+                    subList = []
+                    stringLine = str(lines)
+                    subList.append(stringLine.split("/"))
+
+                for i in subList:
+                    i[3] = float(i[3])
+                    i[4] = float(i[4])
+                
+                    sortedBy = sorted(subList, key = lambda x: x[3])
+            
+            for i, lines in enumerate(sortedBy):
+                id += 1
+                newDict = {"id" : id , "run" : lines[0], "week" : lines[1], "channel" : lines[2], "freq" : lines[3], "coh" : lines[4]}
+                stringListSortedBy.append(newDict)
+            
+        #get the value from the dropdown menu, sort by that value.
+        sortMenu = request.form.get('sorting')
+        
+        if request.form.get('order') == "ascending":
+            orderMenu = False
+        else:
+            orderMenu = True
+        
+        stringListSortedBy = sorted(stringListSortedBy, key = lambda x: x[sortMenu], reverse = orderMenu)
+        
+                
         global run                  #Global variables used to specify search in csv file
         run = searchForm.run.data
 
@@ -121,8 +154,7 @@ def index():
         global dLines
         dLines = dlines
 
-
-        return render_template('lineresult.html', dlines=dlines)
+        return render_template('lineresult.html', dlines=stringListSortedBy)
 
     if request.method == 'GET':
         return render_template('lineform.html', form=searchForm, errormessage="", helpmessage="", tries=1)
