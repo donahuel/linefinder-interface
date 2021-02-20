@@ -132,24 +132,38 @@ def index():
         stringListSortedBy = sorted(stringListSortedBy, key = lambda x: x[sortMenu], reverse = orderMenu)
         
                 
-        global run                  #Global variables used to specify search in csv file
+       global run
         run = searchForm.run.data
+        if run == '':
+            run = 'All'
 
         global week
         week = searchForm.week.data
+        if week == '':
+            week = 'All'
 
         global channel
         channel = searchForm.channel.data
+        if channel == '':
+            channel = 'All'
 
         global freqLB
         freqLB = searchForm.freqlb.data
+        if freqLB == '':
+            freqLB = '0'
         global freqUB
         freqUB = searchForm.frequb.data
+        if freqUB == '':
+            freqUB = 'Highest'
 
         global cohLB
         cohLB = searchForm.cohlb.data
+        if cohLB == '':
+            cohLB = '0'
         global cohUB
         cohUB = searchForm.cohub.data
+        if cohUB == '':
+            cohUB = '1'
 
         global dLines
         dLines = dlines
