@@ -177,7 +177,7 @@ def index():
         "Something went wrong."
 
 
-@app.route("/getPlotCSV")
+@app.route("/data.csv")
 def getPlotCSV():
     
 
