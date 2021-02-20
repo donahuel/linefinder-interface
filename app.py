@@ -132,7 +132,7 @@ def index():
         stringListSortedBy = sorted(stringListSortedBy, key = lambda x: x[sortMenu], reverse = orderMenu)
         
                 
-       global run
+       global run           #Global variables used for csv file
         run = searchForm.run.data
         if run == '':
             run = 'All'
