@@ -42,6 +42,7 @@ def index():
     if request.method == 'POST' and searchForm.validate():
 
         dlines = [] #Desired lines based on search query
+        sortedBy = [] #List used to sort
 
         #Assigning defaults to values.
         searchForm.freqlb.data == "0"
@@ -101,9 +102,6 @@ def index():
                     coCheck = True #...the coherence check passes.
             if coCheck: #If all checks are passed...
                 dlines.append(l) #Add line to desired lines\ 
-                
-                
-                sortedBy = []
                 
                 for lines in dlines:
                     subList = []
