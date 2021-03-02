@@ -11,7 +11,7 @@ def main():
 
     run = 'O2'
     #IMPORTANT: Put 'rootdir' as the data folder within this program, or else the database will not populate.
-    rootdir = 'C:/Users/Scraf/Downloads/LFInterface/linefinder-interface-main/data'
+    rootdir = 'C:/Users/Scraf/Downloads/LFInterface/linefinder-interface-main/data' #This root directory will look different on every machine.
     file_list = []
     for subdir, dirs, files in os.walk(rootdir):
         for file in files:
