@@ -20,7 +20,7 @@ class Line(db.Model):
     coh = db.Column(db.Float) #Coherence for each line
    
     def __repr__(self):
-        return f"{self.run}/{self.week}/{self.channel}/{self.freq}/{self.coh}"
+        return f"{self.run},{self.week},{self.channel},{self.freq},{self.coh}"
     
 #Search form
 class SearchForm(Form):
@@ -106,7 +106,7 @@ def index():
                 for lines in dlines:
                     subList = []
                     stringLine = str(lines)
-                    subList.append(stringLine.split("/"))
+                    subList.append(stringLine.split(","))
 
                 for i in subList:
                     i[3] = float(i[3])
