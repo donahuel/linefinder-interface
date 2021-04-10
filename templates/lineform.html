@@ -13,10 +13,28 @@
 <i><p style="color:red">{{ helpmessage }}</p></i>
 
 <form method=post>
+  <b>Choose a temporal range:</b>
+  <br><input type="radio" id="Weekly" name="Weekly" value="Weekly">
+  <label for="Weekly">Weekly</label>
+  <input type="radio" id="Monthly" name="Monthly" value="Monthly">
+  <label for="Monthly">Monthly</label><br>
+
+  <br><b>Choose an observatory:</b>
+  <br><input type="checkbox" id="H1" name="H1" value="H1">
+  <label for="H1"> Hanford, WA (H1)</label><br>
+  <input type="checkbox" id="L1" name="L1" value="L1">
+  <label for="L1"> Livingston, LA (L1)</label><br>
+
+  <br><label for="run">Choose a run:</label>
+  <select name="run" id="run">
+      <option value="E3B">E3B</option>
+      <option value="O3B">O3B</option>
+  </select>
+  
     <dl>
       <table>
-      {{ render_field(form.run) }}
-      {{ render_field(form.week) }}
+      {{ render_field(form.startTime) }}
+      {{ render_field(form.endTime) }}
       {{ render_field(form.channel) }}
       {{ render_field(form.frequb) }}
       {{ render_field(form.freqlb) }}
