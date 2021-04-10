@@ -13,6 +13,7 @@ db = SQLAlchemy(app)
 #The database itself, this is the class containing information about each row
 class Line(db.Model):
     id = db.Column(db.Integer, primary_key=True) #Unique ID for each line
+    obs = db.Column(db.String(10)) #Observatory for each line
     run = db.Column(db.String(10)) #Run for each line
     week = db.Column(db.String(50)) #Week for each line (e.g. 1175904015)
     channel = db.Column(db.String(50)) #Channel for each line (e.g. L1_PEM-CS_MAG_LVEA_VERTEX_Z)
@@ -63,6 +64,7 @@ def index():
         for l in lines: #For each line...
             #Set checks for each field to false
             rnCheck = False
+            obCheck = False
             wkCheck = False
             chCheck = False
             fqCheck = False
@@ -70,7 +72,10 @@ def index():
 
             if searchForm.run.data in l.run or len(searchForm.run.data) == 0: #If run matches search query OR run field is empty (no run specified)...
                 rnCheck = True #...pass run check.
-            if rnCheck: #If run check is passed...
+            if rnCheck:    
+                if request.form.get('Hanford') == l.obs or request.form.get('Livingston') == l.obs or (request.form.get('Hanford') == request.form.get('Livingston') == None):
+                    obCheck = True
+            if obCheck: #If run check is passed...
                 if searchForm.week.data in l.week or len(searchForm.week.data) == 0: #...and week matches search query OR week field is empty...
                     wkCheck = True #...pass week check.
             if wkCheck: #If week check (and therefore run check) are passed...
@@ -116,7 +121,7 @@ def index():
             
             for i, lines in enumerate(sortedBy):
                 id += 1
-                newDict = {"id" : id , "run" : lines[0], "week" : lines[1], "channel" : lines[2], "freq" : lines[3], "coh" : lines[4]}
+                newDict = {"id" : id , "run" : lines[0], "obs" : lines[1], "week" : lines[1], "channel" : lines[2], "freq" : lines[3], "coh" : lines[4]}
                 stringListSortedBy.append(newDict)
             
         #get the value from the dropdown menu, sort by that value.
@@ -132,6 +137,11 @@ def index():
                 
         global run           #Global variables used for csv file
         run = searchForm.run.data
+        if run == '':
+            run = 'All'
+            
+        global obs           
+        obs = 'H1'
         if run == '':
             run = 'All'
 
@@ -179,7 +189,7 @@ def index():
 def getPlotCSV():
     
 
-    csv = str('Run: ' + run + ',') + str('Week: ' + week + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
+    csv = str('Run: ' + run + ',') + str('Observatory: ' + obs + ',') + str('Week: ' + week + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
     
     
     for line in dLines:
