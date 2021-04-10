@@ -22,7 +22,7 @@ def main():
     sig_lines = []
     for file in file_list:
         week = file.split('\\')[2].split('_')[1] + "-" + file.split('\\')[2].split('_')[2] + "-" + file.split('\\')[2].split('_')[3]
-
+        obs = file.split('\\')[0]
         channel = file.split('\\')[3]
         numsiglines = len(sig_lines)
 
@@ -47,7 +47,7 @@ def main():
     print("There is no next file. Commiting " + str(len(sig_lines)) + " significant lines to the database...")
     for sig_line in sig_lines:
         freq, coh, channel, week = sig_line
-        line=Line(freq=freq, coh=coh, week=week, run=run, channel=channel)
+        line=Line(freq=freq, coh=coh, week=week, run=run, channel=channel, obs=obs)
         db.session.add(line)
 
     db.session.commit()
