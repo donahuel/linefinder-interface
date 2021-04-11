@@ -13,8 +13,8 @@ db = SQLAlchemy(app)
 #The database itself, this is the class containing information about each row
 class Line(db.Model):
     id = db.Column(db.Integer, primary_key=True) #Unique ID for each line
-    obs = db.Column(db.String(10)) #Observatory for each line
     run = db.Column(db.String(10)) #Run for each line
+    obs = db.Column(db.String(10)) #Observatory for each line
     week = db.Column(db.String(50)) #Week for each line (e.g. 1175904015)
     channel = db.Column(db.String(50)) #Channel for each line (e.g. L1_PEM-CS_MAG_LVEA_VERTEX_Z)
     freq = db.Column(db.Float) #Frequency for each line
@@ -26,7 +26,9 @@ class Line(db.Model):
 #Search form
 class SearchForm(Form):
     run = StringField('Run:')
-    week = StringField('Week:')
+    obs = StringField('Observatory:')
+    startTime = StringField('Start Time:')
+    endTime = StringField('End Time:')
     channel = StringField('Channel:')
     frequb = StringField('Frequency upper bound:')
     freqlb = StringField('Frequency lower bound:')
@@ -65,7 +67,8 @@ def index():
             #Set checks for each field to false
             rnCheck = False
             obCheck = False
-            wkCheck = False
+            stCheck = False
+            endCheck = False
             chCheck = False
             fqCheck = False
             coCheck = False
@@ -76,9 +79,12 @@ def index():
                 if request.form.get('H1') == l.obs or request.form.get('L1') == l.obs or (request.form.get('H1') == request.form.get('L1') == None):
                     obCheck = True
             if obCheck: #If run check is passed...
-                if searchForm.week.data in l.week or len(searchForm.week.data) == 0: #...and week matches search query OR week field is empty...
-                    wkCheck = True #...pass week check.
-            if wkCheck: #If week check (and therefore run check) are passed...
+                if searchForm.startTime.data in l.startTime or len(searchForm.startTime.data) == 0: #...and startTime matches search query OR startTime field is empty...
+                    stCheck = True #...pass start time check.
+            if stCheck: #If start time check is passed...
+                if searchForm.endTime.data in l.endTime or len(searchForm.endTime.data) == 0: #...and endTime matches search query OR endTime field is empty...
+                    endCheck = True #...pass end time check.
+            if endCheck: #If end time check is passed...
                 if searchForm.channel.data in l.channel or searchForm.channel.data.upper() in l.channel or len(searchForm.channel.data) == 0: #...and channel matches search query OR channel field is empty...
                     chCheck = True
             if chCheck: #If channel (and run, week) checks are passed...
@@ -121,7 +127,7 @@ def index():
             
             for i, lines in enumerate(sortedBy):
                 id += 1
-                newDict = {"id" : id , "run" : lines[0], "obs" : lines[1], "week" : lines[1], "channel" : lines[2], "freq" : lines[3], "coh" : lines[4]}
+                newDict = {"id" : id , "run" : lines[0], "obs" : lines[1], "week" : lines[2], "channel" : lines[3], "freq" : lines[4], "coh" : lines[5]}
                 stringListSortedBy.append(newDict)
             
         #get the value from the dropdown menu, sort by that value.
@@ -142,8 +148,8 @@ def index():
             
         global obs           
         obs = 'H1'
-        if run == '':
-            run = 'All'
+        if obs == '':
+            obs = 'All'
 
         global week
         week = searchForm.week.data
