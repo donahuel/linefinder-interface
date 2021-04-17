@@ -73,7 +73,7 @@ def index():
             fqCheck = False
             coCheck = False
 
-            if searchForm.run.data in l.run or len(searchForm.run.data) == 0: #If run matches search query OR run field is empty (no run specified)...
+            if searchForm.run.data in l.run: #If run matches search query
                 rnCheck = True #...pass run check.
             if rnCheck:    
                 if request.form.get('H1') == l.obs or request.form.get('L1') == l.obs or (request.form.get('H1') == request.form.get('L1') == None):
