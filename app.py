@@ -21,7 +21,7 @@ class Line(db.Model):
     coh = db.Column(db.Float) #Coherence for each line
    
     def __repr__(self):
-        return f"{self.run},{self.week},{self.channel},{self.freq},{self.coh}"
+        return f"{self.run},{self.obs},{self.week},{self.channel},{self.freq},{self.coh}"
     
 #Search form
 class SearchForm(Form):
@@ -79,10 +79,10 @@ def index():
                 if request.form.get('H1') == l.obs or request.form.get('L1') == l.obs or (request.form.get('H1') == request.form.get('L1') == None):
                     obCheck = True
             if obCheck: #If run check is passed...
-                if searchForm.startTime.data in l.startTime or len(searchForm.startTime.data) == 0: #...and startTime matches search query OR startTime field is empty...
+#                if searchForm.startTime.data in l.startTime or len(searchForm.startTime.data) == 0: #...and startTime matches search query OR startTime field is empty...
                     stCheck = True #...pass start time check.
             if stCheck: #If start time check is passed...
-                if searchForm.endTime.data in l.endTime or len(searchForm.endTime.data) == 0: #...and endTime matches search query OR endTime field is empty...
+#                if searchForm.endTime.data in l.endTime or len(searchForm.endTime.data) == 0: #...and endTime matches search query OR endTime field is empty...
                     endCheck = True #...pass end time check.
             if endCheck: #If end time check is passed...
                 if searchForm.channel.data in l.channel or searchForm.channel.data.upper() in l.channel or len(searchForm.channel.data) == 0: #...and channel matches search query OR channel field is empty...
@@ -120,13 +120,14 @@ def index():
                     subList.append(stringLine.split(","))
 
                 for i in subList:
-                    i[3] = float(i[3])
                     i[4] = float(i[4])
+                    i[5] = float(i[5])
                 
-                    sortedBy = sorted(subList, key = lambda x: x[3])
+                    sortedBy = sorted(subList, key = lambda x: x[4])
             
             for i, lines in enumerate(sortedBy):
                 id += 1
+                print(lines)
                 newDict = {"id" : id , "run" : lines[0], "obs" : lines[1], "week" : lines[2], "channel" : lines[3], "freq" : lines[4], "coh" : lines[5]}
                 stringListSortedBy.append(newDict)
             
@@ -151,10 +152,10 @@ def index():
         if obs == '':
             obs = 'All'
 
-        global week
-        week = searchForm.week.data
-        if week == '':
-            week = 'All'
+#        global week
+#        week = searchForm.week.data
+#        if week == '':
+ #           week = 'All'
 
         global channel
         channel = searchForm.channel.data
@@ -193,7 +194,7 @@ def index():
 
 @app.route("/data.csv")
 def getPlotCSV():
-    
+    week = 'week'
 
     csv = str('Run: ' + run + ',') + str('Observatory: ' + obs + ',') + str('Week: ' + week + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
     
