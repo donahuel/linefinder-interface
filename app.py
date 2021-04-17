@@ -127,7 +127,6 @@ def index():
             
             for i, lines in enumerate(sortedBy):
                 id += 1
-                print(lines)
                 newDict = {"id" : id , "run" : lines[0], "obs" : lines[1], "week" : lines[2], "channel" : lines[3], "freq" : lines[4], "coh" : lines[5]}
                 stringListSortedBy.append(newDict)
             
