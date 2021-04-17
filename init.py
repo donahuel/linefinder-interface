@@ -1,17 +1,16 @@
-#This file populates a SQLite database with information about various lines
+##This file populates a SQLite database with information about various lines
 #Authors: Vincent He, Larry Donahue
 
 def main():
     from app import db, Line
     import numpy as np
-    from scipy.io import loadmat
     import os
     db.drop_all()
     db.create_all()
 
     run = 'O2'
     #IMPORTANT: Put 'rootdir' as the data folder within this program, or else the database will not populate.
-    rootdir = 'C:/Users/Scraf/Downloads/LFInterface/linefinder-interface-main/data' #This root directory will look different on every machine.
+    rootdir = 'C:/Users/malac/Downloads/LFinterface/data' #This root directory will look different on every machine.
     file_list = []
     for subdir, dirs, files in os.walk(rootdir):
         for file in files:
@@ -22,7 +21,7 @@ def main():
     sig_lines = []
     for file in file_list:
         week = file.split('\\')[2].split('_')[1] + "-" + file.split('\\')[2].split('_')[2] + "-" + file.split('\\')[2].split('_')[3]
-        obs = file.split('\\')[0]
+        obs = file.split('\\')[4].split('_')[5]
         channel = file.split('\\')[3]
         numsiglines = len(sig_lines)
 
