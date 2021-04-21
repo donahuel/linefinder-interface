@@ -27,8 +27,8 @@ class Line(db.Model):
 class SearchForm(Form):
     run = StringField('Run:')
     obs = StringField('Observatory:')
-    startTime = StringField('Start Time:')
-    endTime = StringField('End Time:')
+    stDate = StringField('Start Date:')
+    endDate = StringField('End Date:')
     channel = StringField('Channel:')
     frequb = StringField('Frequency upper bound:')
     freqlb = StringField('Frequency lower bound:')
@@ -66,12 +66,36 @@ def index():
         for l in lines: #For each line...
             #Set checks for each field to false
             rnCheck = False
+            yrCheck = False
+            monthCheck = False
+            dayCheck = False
             obCheck = False
-            stCheck = False
-            endCheck = False
             chCheck = False
             fqCheck = False
             coCheck = False
+            
+            if len(searchForm.endDate.data) == 0: # if End Date field is empty, there is effectively no bound on end date
+                endYear = str(9999)
+                endMonth = str(99)
+                endDay = str(99)
+            else: # slice the string from user input to find the respective year, month, and day
+                endYear = searchForm.endDate.data[:4]
+                endMonth = searchForm.endDate.data[5:7]
+                endDay = searchForm.endDate.data[8:]
+
+            if len(searchForm.stDate.data) == 0: # if Start Date field is empty, there is effectively no bound on start date
+                startYear = str(0)
+                startMonth = str(0)
+                startDay = str(0)
+            else: # slice the string from user input to find the respective year, month, and day
+                startYear = searchForm.stDate.data[:4]
+                startMonth = searchForm.stDate.data[5:7]
+                startDay = searchForm.stDate.data[8:]
+
+            # slice the week of the line object into year, month, and day components
+            year = l.week[:4]
+            month = l.week[5:7]
+            day = l.week[8:]
 
             if searchForm.run.data in l.run: #If run matches search query
                 rnCheck = True #...pass run check.
@@ -79,12 +103,15 @@ def index():
                 if request.form.get('H1') == l.obs or request.form.get('L1') == l.obs or (request.form.get('H1') == request.form.get('L1') == None):
                     obCheck = True
             if obCheck: #If run check is passed...
-#                if searchForm.startTime.data in l.startTime or len(searchForm.startTime.data) == 0: #...and startTime matches search query OR startTime field is empty...
-                    stCheck = True #...pass start time check.
-            if stCheck: #If start time check is passed...
-#                if searchForm.endTime.data in l.endTime or len(searchForm.endTime.data) == 0: #...and endTime matches search query OR endTime field is empty...
-                    endCheck = True #...pass end time check.
-            if endCheck: #If end time check is passed...
+                if (startYear <= year and endYear >= year): #...and year range matches search query...
+                    yrCheck = True #...pass year range check.
+            if yrCheck: #If year range check is passed...
+                if (startMonth <= month and endMonth >= month): #...and month range matches search query...
+                    monthCheck = True #...pass month range check.
+            if monthCheck: #If month range check is passed...
+                if (startDay <= day and endDay >= day): #...and day range matches search query...
+                    dayCheck = True #...pass day range check.
+            if dayCheck: #If day range check is passed...
                 if searchForm.channel.data in l.channel or searchForm.channel.data.upper() in l.channel or len(searchForm.channel.data) == 0: #...and channel matches search query OR channel field is empty...
                     chCheck = True
             if chCheck: #If channel (and run, week) checks are passed...
@@ -146,20 +173,19 @@ def index():
         if run == '':
             run = 'All'
             
-        global obs           
         if (request.form.get('H1') == 'H1' and request.form.get('L1') == 'L1') or request.form.get('H1') == request.form.get('L1') == None:
             obs = 'H1 and L1'
         elif request.form.get('H1') == None:
             obs = 'L1'
         elif request.form.get('L1') == None:
             obs = 'H1'
-        
+
         global stTime
-        stTime = searchForm.startTime.data
+        stTime = searchForm.stDate.data
         if stTime == '':
             stTime = 'Start'
         global enTime
-        enTime = searchForm.endTime.data
+        enTime = searchForm.endDate.data
         if enTime == '':
             enTime = 'End'
 
@@ -200,6 +226,7 @@ def index():
 
 @app.route("/data.csv")
 def getPlotCSV():
+    week = 'week'
 
     csv = str('Run: ' + run + ',') + str('Observatory: ' + obs + ',') + str('Time Range: ' + stTime + ' to ' + enTime + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
     
