@@ -226,7 +226,6 @@ def index():
 
 @app.route("/data.csv")
 def getPlotCSV():
-    week = 'week'
 
     csv = str('Run: ' + run + ',') + str('Observatory: ' + obs + ',') + str('Time Range: ' + stTime + ' to ' + enTime + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
     
