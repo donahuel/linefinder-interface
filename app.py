@@ -147,14 +147,21 @@ def index():
             run = 'All'
             
         global obs           
-        obs = 'H1'
-        if obs == '':
-            obs = 'All'
-
-#        global week
-#        week = searchForm.week.data
-#        if week == '':
- #           week = 'All'
+        if (request.form.get('H1') == 'H1' and request.form.get('L1') == 'L1') or request.form.get('H1') == request.form.get('L1') == None:
+            obs = 'H1 and L1'
+        elif request.form.get('H1') == None:
+            obs = 'L1'
+        elif request.form.get('L1') == None:
+            obs = 'H1'
+        
+        global stTime
+        stTime = searchForm.startTime.data
+        if stTime == '':
+            stTime = 'Start'
+        global enTime
+        enTime = searchForm.endTime.data
+        if enTime == '':
+            enTime = 'End'
 
         global channel
         channel = searchForm.channel.data
@@ -164,11 +171,11 @@ def index():
         global freqLB
         freqLB = searchForm.freqlb.data
         if freqLB == '':
-            freqLB = '0'
+            freqLB = '0hz'
         global freqUB
         freqUB = searchForm.frequb.data
         if freqUB == '':
-            freqUB = 'Highest'
+            freqUB = '2000hz'
 
         global cohLB
         cohLB = searchForm.cohlb.data
@@ -193,9 +200,8 @@ def index():
 
 @app.route("/data.csv")
 def getPlotCSV():
-    week = 'week'
 
-    csv = str('Run: ' + run + ',') + str('Observatory: ' + obs + ',') + str('Week: ' + week + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
+    csv = str('Run: ' + run + ',') + str('Observatory: ' + obs + ',') + str('Time Range: ' + stTime + ' to ' + enTime + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
     
     
     for line in dLines:
