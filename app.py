@@ -173,6 +173,7 @@ def index():
         if run == '':
             run = 'All'
             
+        global obs    
         if (request.form.get('H1') == 'H1' and request.form.get('L1') == 'L1') or request.form.get('H1') == request.form.get('L1') == None:
             obs = 'H1 and L1'
         elif request.form.get('H1') == None:
