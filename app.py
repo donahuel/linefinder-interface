@@ -103,11 +103,18 @@ def index():
                 if request.form.get('H1') == l.obs or request.form.get('L1') == l.obs or (request.form.get('H1') == request.form.get('L1') == None):
                     obCheck = True
             if obCheck: #If run check is passed...
-                if (startYear <= year and endYear >= year): #...and year range matches search query...
+                if (startYear < year and endYear > year): #...and year is between startYear and endYear search query...
+                    yrCheck = True #...pass year range check.
+                    monthCheck = True #...pass month range check.
+                    dayCheck = True #...pass day range check.
+                elif (startYear == year or endYear == year): #...and year is the same as either startYear or endYear search query...
                     yrCheck = True #...pass year range check.
             if yrCheck: #If year range check is passed...
-                if (startMonth <= month and endMonth >= month): #...and month range matches search query...
+                if (startMonth < month and endMonth > month): #...and month range matches search query...
                     monthCheck = True #...pass month range check.
+                    dayCheck = True
+                elif (startMonth == month or endMonth == month):
+                    monthCheck = True
             if monthCheck: #If month range check is passed...
                 if (startDay <= day and endDay >= day): #...and day range matches search query...
                     dayCheck = True #...pass day range check.
@@ -173,7 +180,7 @@ def index():
         if run == '':
             run = 'All'
             
-        global obs    
+        global obs
         if (request.form.get('H1') == 'H1' and request.form.get('L1') == 'L1') or request.form.get('H1') == request.form.get('L1') == None:
             obs = 'H1 and L1'
         elif request.form.get('H1') == None:
