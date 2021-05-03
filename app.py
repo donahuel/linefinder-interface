@@ -55,10 +55,14 @@ def index():
         if len(searchForm.frequb.data) != 0 and len(searchForm.freqlb.data) != 0: #If frequency is bounded on both sides, UB < LB cannot be true
             if float(searchForm.frequb.data) < float(searchForm.freqlb.data):
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Lower bound of frequency must be less than or equal to upper bound.")
+        if (type(searchForm.frequb.data) != float and type(searchForm.frequb.data) != int) or (type(searchForm.freqlb.data) != float and type(searchForm.freqlb.data) != int):
+            return render_template('lineform.html', form=searchForm, errormessage="Error: Bounds of frequency must be a number.")
 
         if len(searchForm.cohub.data) != 0 and len(searchForm.cohlb.data) != 0: #If coherence is bounded on both ends, LB > UB cannot be true
             if float(searchForm.cohub.data) < float(searchForm.cohlb.data):
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Lower bound of coherence must be less than or equal to upper bound.")
+        if (type(searchForm.cohub.data) != float and type(searchForm.cohub.data) != int) or (type(searchForm.cohlb.data) != float and type(searchForm.cohlb.data) != int):
+            return render_template('lineform.html', form=searchForm, errormessage="Error: Bounds of coherence must be a number.")
 
         stringListSortedBy = []
         id = 0    
