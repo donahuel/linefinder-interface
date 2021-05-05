@@ -5,6 +5,7 @@ from flask import Flask, render_template, url_for, flash, request, redirect, Res
 from flask_sqlalchemy import SQLAlchemy
 from wtforms import Form, StringField, validators
 import csv
+import numbers
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///line_finder.db'
@@ -51,14 +52,41 @@ def index():
         searchForm.freqlb.data == "0"
         searchForm.cohlb.data == "0"
 
+        def is_float(s):
+            try:
+                float(s)
+                return True
+            except ValueError:
+                return False
+        
+        def is_int(s):
+            try:
+                int(s)
+                return True
+            except ValueError:
+                return False
+
         #Edge cases that the form doesn't like. Takes it in and spits back the form with an error message attached.
-        if len(searchForm.frequb.data) != 0 and len(searchForm.freqlb.data) != 0: #If frequency is bounded on both sides, UB < LB cannot be true
+        if len(searchForm.frequb.data) != 0:
+            if is_float(searchForm.frequb.data) == False and is_int(searchForm.frequb.data) == False:
+                return render_template('lineform.html', form=searchForm, errormessage="Error: Bounds of frequency must be a number.")
+        elif len(searchForm.freqlb.data) != 0:
+            if is_float(searchForm.freqlb.data) == False and is_int(searchForm.freqlb.data) == False:
+                return render_template('lineform.html', form=searchForm, errormessage="Error: Bounds of frequency must be a number.")
+        elif len(searchForm.frequb.data) != 0 and len(searchForm.freqlb.data) != 0: #If frequency is bounded on both sides, UB < LB cannot be true
             if float(searchForm.frequb.data) < float(searchForm.freqlb.data):
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Lower bound of frequency must be less than or equal to upper bound.")
-
-        if len(searchForm.cohub.data) != 0 and len(searchForm.cohlb.data) != 0: #If coherence is bounded on both ends, LB > UB cannot be true
+        
+        if len(searchForm.cohub.data) != 0:
+            if is_float(searchForm.cohub.data) == False and is_int(searchForm.cohub.data) == False:
+                return render_template('lineform.html', form=searchForm, errormessage="Error: Bounds of coherence must be a number.")
+        elif len(searchForm.cohlb.data) != 0:
+            if is_float(searchForm.cohlb.data) == False and is_int(searchForm.cohlb.data) == False:
+                return render_template('lineform.html', form=searchForm, errormessage="Error: Bounds of coherence must be a number.")
+        elif len(searchForm.cohub.data) != 0 and len(searchForm.cohlb.data) != 0: #If coherence is bounded on both ends, LB > UB cannot be true
             if float(searchForm.cohub.data) < float(searchForm.cohlb.data):
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Lower bound of coherence must be less than or equal to upper bound.")
+        
 
         stringListSortedBy = []
         id = 0    
@@ -173,7 +201,6 @@ def index():
             orderMenu = True
         
         stringListSortedBy = sorted(stringListSortedBy, key = lambda x: x[sortMenu], reverse = orderMenu)
-        
                 
         global run           #Global variables used for csv file
         run = searchForm.run.data
