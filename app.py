@@ -56,6 +56,13 @@ def index():
             return render_template('lineform.html', form=searchForm, errormessage="Error: Invalid date format.")
         if len(searchForm.endDate.data) != 0 and len(searchForm.endDate.data) != 10:
             return render_template('lineform.html', form=searchForm, errormessage="Error: Invalid date format.")
+        
+        if len(searchForm.stDate.data) == 10:
+            if searchForm.stDate.data[4] != "/" or searchForm.stDate.data[7] != "/":
+                return render_template('lineform.html', form=searchForm, errormessage="Error: Invalid date format.")
+        if len(searchForm.endDate.data) == 10:
+            if searchForm.endDate.data[4] != "/" or searchForm.endDate.data[7] != "/":
+                return render_template('lineform.html', form=searchForm, errormessage="Error: Invalid date format.")
 
         def is_float(s):
             try:
