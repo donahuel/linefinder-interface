@@ -70,20 +70,20 @@ def index():
         if len(searchForm.frequb.data) != 0:
             if is_float(searchForm.frequb.data) == False and is_int(searchForm.frequb.data) == False:
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Bounds of frequency must be a number.")
-        elif len(searchForm.freqlb.data) != 0:
+        if len(searchForm.freqlb.data) != 0:
             if is_float(searchForm.freqlb.data) == False and is_int(searchForm.freqlb.data) == False:
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Bounds of frequency must be a number.")
-        elif len(searchForm.frequb.data) != 0 and len(searchForm.freqlb.data) != 0: #If frequency is bounded on both sides, UB < LB cannot be true
+        if len(searchForm.frequb.data) != 0 and len(searchForm.freqlb.data) != 0: #If frequency is bounded on both sides, UB < LB cannot be true
             if float(searchForm.frequb.data) < float(searchForm.freqlb.data):
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Lower bound of frequency must be less than or equal to upper bound.")
         
         if len(searchForm.cohub.data) != 0:
             if is_float(searchForm.cohub.data) == False and is_int(searchForm.cohub.data) == False:
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Bounds of coherence must be a number.")
-        elif len(searchForm.cohlb.data) != 0:
+        if len(searchForm.cohlb.data) != 0:
             if is_float(searchForm.cohlb.data) == False and is_int(searchForm.cohlb.data) == False:
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Bounds of coherence must be a number.")
-        elif len(searchForm.cohub.data) != 0 and len(searchForm.cohlb.data) != 0: #If coherence is bounded on both ends, LB > UB cannot be true
+        if len(searchForm.cohub.data) != 0 and len(searchForm.cohlb.data) != 0: #If coherence is bounded on both ends, LB > UB cannot be true
             if float(searchForm.cohub.data) < float(searchForm.cohlb.data):
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Lower bound of coherence must be less than or equal to upper bound.")
         
