@@ -51,6 +51,11 @@ def index():
         #Assigning defaults to values.
         searchForm.freqlb.data == "0"
         searchForm.cohlb.data == "0"
+        
+        if len(searchForm.stDate.data) != 0 and len(searchForm.stDate.data) != 10:
+            return render_template('lineform.html', form=searchForm, errormessage="Error: Invalid date format.")
+        if len(searchForm.endDate.data) != 0 and len(searchForm.endDate.data) != 10:
+            return render_template('lineform.html', form=searchForm, errormessage="Error: Invalid date format.")
 
         def is_float(s):
             try:
