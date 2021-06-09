@@ -1,0 +1,10 @@
+##### app.py required packages #####`
+flask
+flask_sqlalchemy
+wtforms
+csv
+numbers
+
+##### init.py required packages #####`
+numpy
+os
