@@ -24,7 +24,7 @@ class Line(db.Model):
     def __repr__(self):
         return f"{self.run},{self.obs},{self.week},{self.channel},{self.freq},{self.coh}"
     
-#Search form
+#Search form fields
 class SearchForm(Form):
     run = StringField('Run:')
     obs = StringField('Observatory:')
@@ -36,7 +36,11 @@ class SearchForm(Form):
     cohub = StringField('Coherence upper bound:')
     cohlb = StringField('Coherence lower bound:')
 
+#Important lists we append to over the course of the code.
+#dLines is the list of 'desired lines,' or lines that fit the search criterion.
+#sortedBy is the 
 dLines = []
+sortedBy = []
     
 @app.route("/", methods=['GET', 'POST'])
 def index():
@@ -188,25 +192,25 @@ def index():
                         coCheck = True #...the coherence check passes.
                 if coCheck: #If all checks are passed...
                     dlines.append(l) #Add line to desired lines
-                    print(len(dlines))
-                    
-                    for lines in dlines:
-                        subList = []
-                        stringLine = str(lines)
-                        subList.append(stringLine.split(","))
 
-                    for i in subList:
-                        i[4] = float(i[4])
-                        i[5] = float(i[5])
-                    
-                        sortedBy = sorted(subList, key = lambda x: x[4])
-                
-                for i, lines in enumerate(sortedBy):
-                    id += 1
-                    newDict = {"id" : id , "run" : lines[0], "obs" : lines[1], "week" : lines[2], "channel" : lines[3], "freq" : lines[4], "coh" : lines[5]}
-                    stringListSortedBy.append(newDict)
-            
-        #get the value from the dropdown menu, sort by that value.
+        #Now that desired lines are generated, begin sorting
+        subList = [] #Container for simplified dlines
+        for l in dlines: #Converts line objects to lists of strings...
+            lString = str(l)
+            subList.append(lString.split(","))
+
+        for l in subList: #...and floats. We then append these objects to the previously defined list.
+            l[4] = float(l[4])
+            l[5] = float(l[5])
+            sortedBy.append(l)
+
+        #Generate pretty list that ends up getting displayed by enumerating over sorted list
+        for i, lines in enumerate(sortedBy):
+            id += 1
+            newDict = {"id" : id , "run" : lines[0], "obs" : lines[1], "week" : lines[2], "channel" : lines[3], "freq" : lines[4], "coh" : lines[5]}
+            stringListSortedBy.append(newDict)
+
+        #Get the value from the dropdown menu, sort by that value.
         sortMenu = request.form.get('sorting')
         
         if request.form.get('order') == "ascending":
@@ -216,7 +220,8 @@ def index():
         
         stringListSortedBy = sorted(stringListSortedBy, key = lambda x: x[sortMenu], reverse = orderMenu)
                 
-        global run           #Global variables used for csv file
+        #Global variables used for .csv file
+        global run
         run = searchForm.run.data
         if run == '':
             run = 'All'
@@ -250,7 +255,7 @@ def index():
         global freqUB
         freqUB = searchForm.frequb.data
         if freqUB == '':
-            freqUB = '2000hz'
+            freqUB = '2000Hz'
 
         global cohLB
         cohLB = searchForm.cohlb.data
@@ -265,7 +270,10 @@ def index():
         dLines = dlines
 
         if len(dLines) == 2500:
-            return render_template('lineresult.html', dlines=stringListSortedBy, warning="Line search limited to 2500 results. Confine bounds for a more specific search.")
+            return render_template('lineresult.html', dlines=stringListSortedBy, warning="Line search limited to the first 2500 results found. Try confining bounds for a more specific search. Lines with coherences or frequencies outside of this range may exist.")
+        
+        if len(dLines) == 0:
+            return render_template('lineresult.html', dlines=stringListSortedBy, warning="No lines found. Try loosening bounds for a more broad search.")
         
         else:
             return render_template('lineresult.html', dlines=stringListSortedBy, warning="")
