@@ -8,9 +8,22 @@ def main():
     db.drop_all()
     db.create_all()
 
-    run = 'O2'
+    #Prompt user to see whether init should run with extra verbosity or not
+    verbosity = True
+    gate = True
+    while gate:
+        userInput = input("Run init.py with extra verbosity? (Y/N): ")
+        if userInput.lower() == "y":
+            gate = False
+        elif userInput.lower() == "n":
+            verbosity = False
+            gate = False
+        else:
+            print("Invalid character. \n")        
+
+    run = 'O3B'
     #IMPORTANT: Put 'rootdir' as the data folder within this program, or else the database will not populate.
-    rootdir = 'C:/Users/malac/Downloads/LFinterface/data' #This root directory will look different on every machine.
+    rootdir = 'C:/Users/Scraf/Downloads/LFI-Main/data' #This root directory will look different on every machine.
     file_list = []
     for subdir, dirs, files in os.walk(rootdir):
         for file in files:
@@ -19,13 +32,15 @@ def main():
                 file_list.append(filepath)
                 
     sig_lines = []
+    print("Beginning file reading...")
     for file in file_list:
         week = file.split('\\')[2].split('_')[1] + "-" + file.split('\\')[2].split('_')[2] + "-" + file.split('\\')[2].split('_')[3]
         obs = file.split('\\')[4].split('_')[5]
         channel = file.split('\\')[3]
         numsiglines = len(sig_lines)
 
-        print("Currently working with file: " + file.split('\\')[4] + " for channel " + channel + " in week " + week + "...")
+        if verbosity:
+            print("Currently working with file: " + file.split('\\')[4] + " for channel " + channel + " in week " + week + "...")
 
         data = open(file, "r")
         for line in data:
@@ -38,12 +53,13 @@ def main():
 
             coh = float(currline[1]) #Storing the coherence is... simpler.
 
-            threshold = 0.15 #Threshold for coherence. Coherences below this value are not stored as significant lines (or at all)
+            threshold = 0.05 #Threshold for coherence. Coherences below this value are not stored as significant lines (or at all)
             if coh > threshold and coh < 1: #Eliminates coherences below the threshold and extraneous coherences above 1 (with fscan, this shouldn't be an issue)
                 sig_lines.append((freq, coh, channel, week))
-        print("Moving to next file. Found " + str(len(sig_lines) - numsiglines) + " significant lines in file. Threshold is: " + str(threshold))
+        if verbosity:
+            print("Moving to next file. Found " + str(len(sig_lines) - numsiglines) + " significant lines in file. Threshold is: " + str(threshold))
 
-    print("There is no next file. Commiting " + str(len(sig_lines)) + " significant lines to the database...")
+    print("All files read. Commiting " + str(len(sig_lines)) + " significant lines to the database...")
     for sig_line in sig_lines:
         freq, coh, channel, week = sig_line
         line=Line(freq=freq, coh=coh, week=week, run=run, channel=channel, obs=obs)
