@@ -1,5 +1,5 @@
 ##This file populates a SQLite database with information about various lines
-#Authors: Vincent He, Larry Donahue
+#Authors: Larry Donahue, Vincent He, Malachy Bloom, Michael Yang
 
 def main():
     from app import db, Line
@@ -45,6 +45,8 @@ def main():
         data = open(file, "r")
         for line in data:
             currline = data.readline().split(' ') #Splits read line into frequency (index 0) and associated coherence (index 1)
+            if currline == ['']: #Prevents empty 'lines' from stopping code
+                break
             if (currline[0].split('e')[1] == "+00"): #If the frequency isn't altered by the scientific notation after it... (i.e. 5*10^0)
                 freq = float(currline[0].split('e')[0]) #Splits frequency XXXXe+00 into XXXX and e+00, then stores XXXX as frequency
             else: #Else...
@@ -60,13 +62,12 @@ def main():
             print("Moving to next file. Found " + str(len(sig_lines) - numsiglines) + " significant lines in file. Threshold is: " + str(threshold))
 
     print("All files read. Commiting " + str(len(sig_lines)) + " significant lines to the database...")
-    for sig_line in sig_lines:
+    for sig_line in sig_lines: #Commits significant lines to database
         freq, coh, channel, week = sig_line
         line=Line(freq=freq, coh=coh, week=week, run=run, channel=channel, obs=obs)
         db.session.add(line)
 
-    db.session.commit()
+    db.session.commit() #Adds the changes
     print("Committed " + str(len(sig_lines)) + " significant lines to the database.")
 print("Running...")
 main()
-
