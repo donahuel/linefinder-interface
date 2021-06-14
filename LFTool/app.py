@@ -1,5 +1,5 @@
 #This file produces a web interface which searches a database populated by init.py for line objects and displays the results on a webpage.
-#Authors: Vincent He, Larry Donahue, Malachy Bloom, Michael Yang
+#Authors: Larry Donahue, Vincent He Malachy Bloom, Michael Yang
 
 from flask import Flask, render_template, url_for, flash, request, redirect, Response
 from flask_sqlalchemy import SQLAlchemy
@@ -16,7 +16,7 @@ class Line(db.Model):
     id = db.Column(db.Integer, primary_key=True) #Unique ID for each line
     run = db.Column(db.String(10)) #Run for each line
     obs = db.Column(db.String(10)) #Observatory for each line
-    week = db.Column(db.String(50)) #Week for each line (e.g. 1175904015)
+    week = db.Column(db.String(50)) #Week of observance for each line (e.g. 2017/01/01)
     channel = db.Column(db.String(50)) #Channel for each line (e.g. L1_PEM-CS_MAG_LVEA_VERTEX_Z)
     freq = db.Column(db.Float) #Frequency for each line
     coh = db.Column(db.Float) #Coherence for each line
@@ -36,26 +36,22 @@ class SearchForm(Form):
     cohub = StringField('Coherence upper bound:')
     cohlb = StringField('Coherence lower bound:')
 
-#Important lists we append to over the course of the code.
-#dLines is the list of 'desired lines,' or lines that fit the search criterion.
-#sortedBy is the 
+#These are important lists we append to over the course of the code.
+#dLines is the list of 'desired lines,' or lines that fit the search criterion. The capital L indicates the global version.
+#sortedBy is the list used to sort the desired lines
 dLines = []
 sortedBy = []
     
 @app.route("/", methods=['GET', 'POST'])
 def index():
     searchForm = SearchForm(request.form)
-    lines = Line.query.all() #Set of all lines which will be cut by the searches  
 
     if request.method == 'POST' and searchForm.validate():
 
-        dlines = [] #Desired lines based on search query
-        sortedBy = [] #List used to sort
+        dlines = [] #Desired lines based on search query. This is the local version.
+        sortedBy.clear() #Clears sorted list in the event of repeated queries (prevents duplication of line objects)
 
-        #Assigning defaults to values.
-        searchForm.freqlb.data == "0"
-        searchForm.cohlb.data == "0"
-        
+        #The following blocks of code catch errors in user input in the date section.        
         if len(searchForm.stDate.data) != 0 and len(searchForm.stDate.data) != 10:
             return render_template('lineform.html', form=searchForm, errormessage="Error: Invalid date format.")
         if len(searchForm.endDate.data) != 0 and len(searchForm.endDate.data) != 10:
@@ -92,7 +88,6 @@ def index():
         if len(searchForm.frequb.data) != 0 and len(searchForm.freqlb.data) != 0: #If frequency is bounded on both sides, UB < LB cannot be true
             if float(searchForm.frequb.data) < float(searchForm.freqlb.data):
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Lower bound of frequency must be less than or equal to upper bound.")
-        
         if len(searchForm.cohub.data) != 0:
             if is_float(searchForm.cohub.data) == False and is_int(searchForm.cohub.data) == False:
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Bounds of coherence must be a number.")
@@ -102,52 +97,61 @@ def index():
         if len(searchForm.cohub.data) != 0 and len(searchForm.cohlb.data) != 0: #If coherence is bounded on both ends, LB > UB cannot be true
             if float(searchForm.cohub.data) < float(searchForm.cohlb.data):
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Lower bound of coherence must be less than or equal to upper bound.")
-        
 
-        stringListSortedBy = []
-        id = 0    
+        #Assigning default values to fields. These are the values that will be altered by the search form data. The run and observatories' default values are automatically selected by the interface.
+        searchParams = ["0000/01/01", "9999/12/31", "", -0.01, 9999, -0.01, 9.99]
+
+        #Altering non-empty values based on user-defined query. Run is not present due to the interface deciding the value automatically, and observatories' checkbox nature makes them work differently.
+        if len(searchForm.stDate.data) != 0:
+            searchParams[0] = searchForm.stDate.data
+        if len(searchForm.endDate.data) != 0:
+            searchParams[1] = searchForm.endDate.data
+        if len(searchForm.channel.data) != 0:
+            searchParams[2] = searchForm.channel.data
+        if len(searchForm.freqlb.data) != 0:
+            searchParams[3] = searchForm.freqlb.data
+        if len(searchForm.frequb.data) != 0:
+            searchParams[4] = searchForm.frequb.data
+        if len(searchForm.cohlb.data) != 0:
+            searchParams[5] = searchForm.cohlb.data
+        if len(searchForm.cohub.data) != 0:
+            searchParams[6] = searchForm.cohub.data
+
+        print(searchForm.run.data, request.form.get('H1'), request.form.get('L1'), searchForm.stDate.data, searchForm.endDate.data, searchForm.channel.data, searchForm.freqlb.data, searchForm.frequb.data, searchForm.cohlb.data, searchForm.cohub.data)
+        stringListSortedBy = [] #Generates array where sorted list is stored (and eventually printed from)
+        id = 0 #A counting variable for the sorting dictionary, to be defined later
+        
+        #Set of lines which satisfy run, coherence, and frequency search criteria. This cuts down search results dramatically compared to starting with the entire database.
+        lines = Line.query.filter(
+            Line.run == searchForm.run.data,
+            (searchParams[3] <= Line.freq) & (Line.freq <= searchParams[4]),
+            (searchParams[5] <= Line.coh) & (Line.coh <= searchParams[6])
+        )
+        print(lines)
         
         for l in lines: #For each line...
             if len(dlines) < 2500: #Makes sure dlines does not swell too big, prevents breaking of page
                 #Set checks for each field to false
-                rnCheck = False
                 yrCheck = False
                 monthCheck = False
                 dayCheck = False
                 obCheck = False
                 chCheck = False
-                fqCheck = False
-                coCheck = False
-                
-                if len(searchForm.endDate.data) == 0: # if End Date field is empty, there is effectively no bound on end date
-                    endYear = str(9999)
-                    endMonth = str(99)
-                    endDay = str(99)
-                else: # slice the string from user input to find the respective year, month, and day
-                    endYear = searchForm.endDate.data[:4]
-                    endMonth = searchForm.endDate.data[5:7]
-                    endDay = searchForm.endDate.data[8:]
 
-                if len(searchForm.stDate.data) == 0: # if Start Date field is empty, there is effectively no bound on start date
-                    startYear = str(0)
-                    startMonth = str(0)
-                    startDay = str(0)
-                else: # slice the string from user input to find the respective year, month, and day
-                    startYear = searchForm.stDate.data[:4]
-                    startMonth = searchForm.stDate.data[5:7]
-                    startDay = searchForm.stDate.data[8:]
-
-                # slice the week of the line object into year, month, and day components
+                # Slice the weeks of the line object and both user queries into year, month, and day components
                 year = l.week[:4]
                 month = l.week[5:7]
                 day = l.week[8:]
+                startYear = searchParams[0][:4]
+                startMonth = searchParams[0][5:7]
+                startDay = searchParams[0][8:]
+                endYear = searchParams[1][:4]
+                endMonth = searchParams[1][5:7]
+                endDay = searchParams[1][8:]
 
-                if searchForm.run.data in l.run: #If run matches search query
-                    rnCheck = True #...pass run check.
-                if rnCheck:    
-                    if request.form.get('H1') == l.obs or request.form.get('L1') == l.obs or (request.form.get('H1') == request.form.get('L1') == None):
-                        obCheck = True
-                if obCheck: #If run check is passed...
+                if request.form.get('H1') == l.obs or request.form.get('L1') == l.obs or (request.form.get('H1') == request.form.get('L1') == None): #Check observatory selection
+                    obCheck = True
+                if obCheck: #If observatory check is passed...
                     if (startYear < year and endYear > year): #...and year is between startYear and endYear search query...
                         yrCheck = True #...pass year range check.
                         monthCheck = True #...pass month range check.
@@ -167,30 +171,6 @@ def index():
                     if searchForm.channel.data in l.channel or searchForm.channel.data.upper() in l.channel or len(searchForm.channel.data) == 0: #...and channel matches search query OR channel field is empty...
                         chCheck = True
                 if chCheck: #If channel (and run, week) checks are passed...
-                    if len(searchForm.frequb.data) == 0 and len(searchForm.freqlb.data) != 0: #...we see if the search query frequency has a lower, but no upper, bound. If so...
-                        if float(searchForm.freqlb.data) < l.freq: #...we check if the line has a greater frequency than the lower bound...
-                            fqCheck = True #...if so, pass frequency check.
-                    elif len(searchForm.freqlb.data) == 0 and len(searchForm.frequb.data) != 0: #...we see if the search query frequency has an upper, but no lower, bound. If so...
-                        if float(searchForm.frequb.data) > l.freq: #...we check if the line has a lesser frequency than the upper bound...
-                            fqCheck = True #...if so, pass frequency check.
-                    elif len(searchForm.freqlb.data) != 0 and len(searchForm.frequb.data) != 0: #...we see if the search query is bounded on both ends. If so...
-                        if float(searchForm.freqlb.data) < l.freq and float(searchForm.frequb.data) > l.freq: #...we check if the line's frequency is within bounds...
-                            fqCheck = True #...if so, pass frequency check.
-                    else: #...by the first 3 mutually exclusive statements passing, this means both frequency queries are blank. And thus...
-                        fqCheck = True #...the frequency check passes.
-                if fqCheck: #If frequency (and run, week, channel) checks are passed...
-                    if len(searchForm.cohub.data) == 0 and len(searchForm.cohlb.data) != 0: #...we see if the search query coherence has a lower, but no upper, bound. If so...
-                        if float(searchForm.cohlb.data) < l.coh: #...we check if the line has a greater coherence than the lower bound...
-                            coCheck = True #...if so, pass coherence check.
-                    elif len(searchForm.cohlb.data) == 0 and len(searchForm.cohub.data) != 0: #...we see if the search query coherence has an upper, but no lower, bound. If so...
-                        if float(searchForm.cohub.data) > l.coh: #...we check if the line has a lesser coherence than the upper bound...
-                            coCheck = True #...if so, pass coherence check.
-                    elif len(searchForm.cohlb.data) != 0 and len(searchForm.cohub.data) != 0: #...we see if the search query is bounded on both ends. If so...
-                        if float(searchForm.cohlb.data) < l.coh and float(searchForm.cohub.data) > l.coh: #...we check if the line's coherence is within bounds...
-                            coCheck = True #...if so, pass coherence check.
-                    else: #...by the first 3 mutually exclusive statements passing, this means both coherence queries are blank. And thus...
-                        coCheck = True #...the coherence check passes.
-                if coCheck: #If all checks are passed...
                     dlines.append(l) #Add line to desired lines
 
         #Now that desired lines are generated, begin sorting
@@ -199,7 +179,7 @@ def index():
             lString = str(l)
             subList.append(lString.split(","))
 
-        for l in subList: #...and floats. We then append these objects to the previously defined list.
+        for l in subList: #...and floats. We then append these objects to the previously defined sortedBy list.
             l[4] = float(l[4])
             l[5] = float(l[5])
             sortedBy.append(l)
@@ -266,7 +246,6 @@ def index():
         if cohUB == '':
             cohUB = '1'
 
-        global dLines
         dLines = dlines
 
         if len(dLines) == 2500:
