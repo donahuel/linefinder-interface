@@ -117,7 +117,6 @@ def index():
         if len(searchForm.cohub.data) != 0:
             searchParams[6] = searchForm.cohub.data
 
-        print(searchForm.run.data, request.form.get('H1'), request.form.get('L1'), searchForm.stDate.data, searchForm.endDate.data, searchForm.channel.data, searchForm.freqlb.data, searchForm.frequb.data, searchForm.cohlb.data, searchForm.cohub.data)
         stringListSortedBy = [] #Generates array where sorted list is stored (and eventually printed from)
         id = 0 #A counting variable for the sorting dictionary, to be defined later
         
@@ -127,7 +126,6 @@ def index():
             (searchParams[3] <= Line.freq) & (Line.freq <= searchParams[4]),
             (searchParams[5] <= Line.coh) & (Line.coh <= searchParams[6])
         )
-        print(lines)
         
         for l in lines: #For each line...
             if len(dlines) < 2500: #Makes sure dlines does not swell too big, prevents breaking of page
