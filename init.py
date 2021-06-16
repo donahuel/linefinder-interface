@@ -25,7 +25,7 @@ def main():
     run = 'O3B'
     threshold = 0.95
     #IMPORTANT: Put 'rootdir' as the data folder within this program, or else the database will not populate.
-    rootdir = 'C:/Users/Scraf/Downloads/LFI-Main/data' #This root directory will look different on every machine.
+    rootdir = '<PATH TO DATA FOLDER HERE>' #This root directory will look different on every machine.
     file_list = []
     for subdir, dirs, files in os.walk(rootdir):
         for file in files:
