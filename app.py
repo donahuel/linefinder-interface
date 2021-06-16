@@ -1,8 +1,9 @@
 #This file produces a web interface which searches a database populated by init.py for line objects and displays the results on a webpage.
 #Authors: Larry Donahue, Vincent He Malachy Bloom, Michael Yang
 
-from flask import Flask, render_template, url_for, flash, request, redirect, Response
+from flask import Flask, render_template, url_for, flash, request, redirect, Response, send_file
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine
 from wtforms import Form, StringField, validators
 import csv
 import numbers
@@ -16,7 +17,7 @@ class Line(db.Model):
     id = db.Column(db.Integer, primary_key=True) #Unique ID for each line
     run = db.Column(db.String(10)) #Run for each line
     obs = db.Column(db.String(10)) #Observatory for each line
-    week = db.Column(db.String(50)) #Week of observance for each line (e.g. 2017/01/01)
+    week = db.Column(db.String(50)) #Week for each line (e.g. 2017/01/01)
     channel = db.Column(db.String(50)) #Channel for each line (e.g. L1_PEM-CS_MAG_LVEA_VERTEX_Z)
     freq = db.Column(db.Float) #Frequency for each line
     coh = db.Column(db.Float) #Coherence for each line
@@ -36,8 +37,8 @@ class SearchForm(Form):
     cohub = StringField('Coherence upper bound:')
     cohlb = StringField('Coherence lower bound:')
 
-#These are important lists we append to over the course of the code.
-#dLines is the list of 'desired lines,' or lines that fit the search criterion. The capital L indicates the global version.
+#Important lists we append to over the course of the code.
+#dLines is the list of 'desired lines,' or lines that fit the search criterion.
 #sortedBy is the list used to sort the desired lines
 dLines = []
 sortedBy = []
@@ -48,7 +49,6 @@ def index():
 
     if request.method == 'POST' and searchForm.validate():
 
-        dlines = [] #Desired lines based on search query. This is the local version.
         sortedBy.clear() #Clears sorted list in the event of repeated queries (prevents duplication of line objects)
 
         #The following blocks of code catch errors in user input in the date section.        
@@ -101,7 +101,7 @@ def index():
         #Assigning default values to fields. These are the values that will be altered by the search form data. The run and observatories' default values are automatically selected by the interface.
         searchParams = ["0000/01/01", "9999/12/31", "", -0.01, 9999, -0.01, 9.99]
 
-        #Altering non-empty values based on user-defined query. Run is not present due to the interface deciding the value automatically, and observatories' checkbox nature makes them work differently.
+        #Altering default values based on user-defined query. Run is not present due to the interface deciding the value automatically, and observatories' checkbox nature makes them work differently.
         if len(searchForm.stDate.data) != 0:
             searchParams[0] = searchForm.stDate.data
         if len(searchForm.endDate.data) != 0:
@@ -117,6 +117,7 @@ def index():
         if len(searchForm.cohub.data) != 0:
             searchParams[6] = searchForm.cohub.data
 
+        print(searchForm.run.data, request.form.get('H1'), request.form.get('L1'), searchForm.stDate.data, searchForm.endDate.data, searchForm.channel.data, searchForm.freqlb.data, searchForm.frequb.data, searchForm.cohlb.data, searchForm.cohub.data)
         stringListSortedBy = [] #Generates array where sorted list is stored (and eventually printed from)
         id = 0 #A counting variable for the sorting dictionary, to be defined later
         
@@ -125,10 +126,11 @@ def index():
             Line.run == searchForm.run.data,
             (searchParams[3] <= Line.freq) & (Line.freq <= searchParams[4]),
             (searchParams[5] <= Line.coh) & (Line.coh <= searchParams[6])
-        )
+        ).limit(2500)
+        print(lines)
         
         for l in lines: #For each line...
-            if len(dlines) < 2500: #Makes sure dlines does not swell too big, prevents breaking of page
+            if len(dLines) < 2500: #Makes sure dLines does not swell too big, prevents breaking of page
                 #Set checks for each field to false
                 yrCheck = False
                 monthCheck = False
@@ -169,11 +171,11 @@ def index():
                     if searchForm.channel.data in l.channel or searchForm.channel.data.upper() in l.channel or len(searchForm.channel.data) == 0: #...and channel matches search query OR channel field is empty...
                         chCheck = True
                 if chCheck: #If channel (and run, week) checks are passed...
-                    dlines.append(l) #Add line to desired lines
+                    dLines.append(l) #Add line to desired lines
 
         #Now that desired lines are generated, begin sorting
-        subList = [] #Container for simplified dlines
-        for l in dlines: #Converts line objects to lists of strings...
+        subList = [] #Container for simplified dLines
+        for l in dLines: #Converts line objects to lists of strings...
             lString = str(l)
             subList.append(lString.split(","))
 
@@ -244,11 +246,9 @@ def index():
         if cohUB == '':
             cohUB = '1'
 
-        dLines = dlines
-
         if len(dLines) == 2500:
-            return render_template('lineresult.html', dlines=stringListSortedBy, warning="Line search limited to the first 2500 results found. Try confining bounds for a more specific search. Lines with coherences or frequencies outside of this range may exist.")
-        
+            return render_template('lineresult.html', dlines=stringListSortedBy, warning="Line search limited to the first 2500 results found. Try confining bounds for a more specific search. Lines with coherences or frequencies outside the ranges shown here may exist.")
+
         if len(dLines) == 0:
             return render_template('lineresult.html', dlines=stringListSortedBy, warning="No lines found. Try loosening bounds for a more broad search.")
         
@@ -261,13 +261,10 @@ def index():
     else:
         "Something went wrong."
 
-
 @app.route("/data.csv")
 def getPlotCSV():
 
     csv = str('Run: ' + run + ',') + str('Observatory: ' + obs + ',') + str('Time Range: ' + stTime + ' to ' + enTime + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
-    
-    
     for line in dLines:
         csv = csv + str(line) + '\n'
     csv = csv.encode()
