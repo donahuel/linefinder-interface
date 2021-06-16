@@ -1,9 +1,8 @@
-##This file produces a web interface which searches a database populated by init.py for line objects and displays the results on a webpage.
+#This file produces a web interface which searches a database populated by init.py for line objects and displays the results on a webpage.
 #Authors: Larry Donahue, Vincent He Malachy Bloom, Michael Yang
 
 from flask import Flask, render_template, url_for, flash, request, redirect, Response, send_file
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine
 from wtforms import Form, StringField, validators
 import csv
 import numbers
