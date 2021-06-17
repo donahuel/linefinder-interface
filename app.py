@@ -261,8 +261,8 @@ def index():
     else:
         "Something went wrong."
 
-@app.route("/data.csv")
-def getPlotCSV():
+@app.route("/download")
+def download():
 
     csv = str('Run: ' + run + ',') + str('Observatory: ' + obs + ',') + str('Time Range: ' + stTime + ' to ' + enTime + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
     for line in dLines:
@@ -273,7 +273,7 @@ def getPlotCSV():
         csv, 
         mimetype="text/csv",
         headers={"Content-disposition":
-                 "attachment; filename=myplot.csv"})
+                 "attachment; filename=Linefinder.csv"})
 
 
 if __name__ == '__main__':
