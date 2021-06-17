@@ -48,6 +48,7 @@ def index():
 
     if request.method == 'POST' and searchForm.validate():
 
+        dLines.clear() #Clears dLines in the event of repeated queries (prevents duplication of line objects)
         sortedBy.clear() #Clears sorted list in the event of repeated queries (prevents duplication of line objects)
 
         #The following blocks of code catch errors in user input in the date section.        
