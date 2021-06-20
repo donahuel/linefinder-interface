@@ -1,4 +1,5 @@
-##This file populates a SQLite database with information about various lines
+#This file populates a SQLite database with information about various lines
+#This is an archival version of init.py that does not have the save file function. The new version of init.py is in the main directory of this project, alongside the prodready branch.
 #Authors: Larry Donahue, Vincent He, Malachy Bloom, Michael Yang
 
 def main():
