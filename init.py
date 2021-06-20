@@ -86,7 +86,7 @@ def populate(sig_lines, verbosity):
 
 print("Running...")
 #IMPORTANT: Put 'rootdir' as the main folder of this program, or else the database will not populate.
-rootdir = 'C:/Users/Scraf/Downloads/LFI-Main' #This root directory will look different on every machine.
+rootdir = '<MAIN FOLDER HERE>' #This root directory will look different on every machine.
 run = 'O3B'
 threshold = 0.00 #Lines with coherences below this threshold will be ignored
 
