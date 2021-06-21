@@ -99,7 +99,6 @@ def populate(verbosity):
         for l in tempfile.readlines():
             sig_lines.append(eval(l))
         tempfile.close() #Closes file
-        os.remove(tempname) #Deletes file once all lines are committed
         if len(sig_lines) == 0: #If there's no lines to look at, commit what we have 
             print("End of line list reached.")
             break
@@ -113,6 +112,7 @@ def populate(verbosity):
             if len(sig_lines) == 0: #If there's no lines to look at, break out of loop and go back to for loop
                 break
         db.session.commit() #When a chunk of chunksize lines is fully created, we push that small commit to the database.
+        os.remove(tempname) #Deletes file once all lines are committed
         if verbosity:
             print("[" + str(m.ceil(totalcls/chunksize)) + ", " + str(totalcls) + "] Chunk committed, moving onto next chunk.")
 
