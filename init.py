@@ -1,5 +1,5 @@
 #This file populates a SQLite database with information about various lines
-#Authors: Vincent He, Larry Donahue
+#Authors: Larry Donahue, Malachy Bloom, Michael Yang, Vincent He
 
 from app import db, Line
 import numpy as np
@@ -7,6 +7,7 @@ import os
 import math as m
 
 def skim(verbose):
+    #Skims files in data folder and stores read line objects in a list, which is returned.
     db.drop_all()
     db.create_all()       
 
@@ -48,35 +49,68 @@ def skim(verbose):
 
     return sig_lines
 
-def populate(sig_lines, verbosity):
-    #A problem that arose as we neared production: We can't commit large (>3000000, at least) chunks to the database all at once.
-    #To solve this, we cut the speed of the process (which is fine, because this program runs once) by populating the database in small chunks.
-    
-    chunksize = 50 #Width of chunks pushed to database
+def maketemp(sig_lines, verbosity):
+    #Creates a directory that temporarily houses line objects in text files
+    os.mkdir("temp") #Creates directory. This directory should not exist at this point.
     totalchunks = m.ceil(len(sig_lines)/chunksize) #Total number of chunks needed to push to the database.
-    totalcls = 0 #A counting variable for total lines committed
-    savefile = open("partialcom.txt", "w") #Creates an intermediate 'save' file for line objects to be stored in, in the event of a crash while the database is populating
-    savefile.close()
 
-    print(str(totalchunks) + " chunk(s) will be used.")
+    print(str(totalchunks) + " temp files will be created.")
 
-    for chunk in range(0, totalchunks+1): #For the number of chunks necessary...
-        commitedlines = 0 #A counting variable
-        savefile = open("partialcom.txt", "w") #Writes remaining lines to commit to the save file
-        for l in sig_lines:
-            savefile.write(str(l) + "&")
-        savefile.close()
+    for chunk in range(1, totalchunks+1): #For the number of chunks necessary...
+        tempname = "temp/chunk" + str(chunk) + ".lft"
+        tempfile = open(tempname, "w")
+        lineswritten = 0 #Counting variable
+        for l in sig_lines[0:chunksize]:
+            tempfile.write(str(l) + "\n")
+            sig_lines.pop(0)
+            lineswritten = lineswritten + 1
+        tempfile.close()
+        if verbosity:
+            print("Temporary file " + tempname + " containing " + str(lineswritten) + " lines written to temp directory.")
         if len(sig_lines) == 0: #If there's no lines to look at, commit what we have 
             print("End of line list reached.")
             break
-        while commitedlines < chunksize:
-            freq, coh, channel, week, obs = sig_lines[0] #Get first line in sig_lines list 
+
+def populate(verbosity):
+    #A problem that arose as we neared production: We can't commit large (>3000000, at least) chunks to the database all at once.
+    #To solve this, we cut the speed of the process (which is fine, because this program runs once) by populating the database in small chunks.
+    #These chunks are stored in a 'temp' directory, and are read and stored one by one.
+    
+    totalchunks = [] #An array of numbers which dictates the order of the temp files that get pushed to database.
+    totalcls = 0 #A counting variable for total lines committed
+    sig_lines = [] #Create empty sig_lines list for line objects to be stored in
+    tempname = "temp/chunk1.lft" #Default file name for chunk
+
+    for files in os.walk(rootdir + "/temp"): #Get number of total chunks
+        for file in files:
+            templist = file
+    
+    for f in templist:
+        totalchunks.append(int(f.strip("chunk.lft")))
+
+    totalchunks.sort() #Sorts list numerically for easier time in for loop
+
+    print(str(len(totalchunks)) + " chunk(s) will be used.")
+
+    for chunk in totalchunks: #For the number of chunks necessary...
+        tempname = "temp/chunk" + str(chunk) + ".lft"
+        commitedlines = 0 #A counting variable
+        tempfile = open(tempname, "r") #Reads chunk file in temp, stores lines in list
+        for l in tempfile.readlines():
+            sig_lines.append(eval(l))
+        tempfile.close() #Closes file
+        os.remove(tempname) #Deletes file once all lines are committed
+        if len(sig_lines) == 0: #If there's no lines to look at, commit what we have 
+            print("End of line list reached.")
+            break
+        while commitedlines <= chunksize:
+            freq, coh, channel, week, obs = sig_lines[0] #Get first line in sig_lines list
             line = Line(freq=freq, coh=coh, week=week, run=run, channel=channel, obs=obs) #Create the line object from pertinent information
             db.session.add(line) #Add line to DB session
             sig_lines.pop(0) #Pop line off of list
             commitedlines = commitedlines + 1 #Count the added line
             totalcls = totalcls + 1
-            if len(sig_lines) == 0: #If there's no lines to look at, break out of loop and go back to for
+            if len(sig_lines) == 0: #If there's no lines to look at, break out of loop and go back to for loop
                 break
         db.session.commit() #When a chunk of chunksize lines is fully created, we push that small commit to the database.
         if verbosity:
@@ -86,9 +120,10 @@ def populate(sig_lines, verbosity):
 
 print("Running...")
 #IMPORTANT: Put 'rootdir' as the main folder of this program, or else the database will not populate.
-rootdir = '<MAIN FOLDER HERE>' #This root directory will look different on every machine.
+rootdir = 'C:/Users/Scraf/Downloads/LFI-Main' #This root directory will look different on every machine.
 run = 'O3B'
 threshold = 0.00 #Lines with coherences below this threshold will be ignored
+chunksize = 50 #Width of chunks pushed to database
 
 #Prompt user to see whether init should run with extra verbosity or not
 verbosity = True
@@ -103,28 +138,30 @@ while gate:
     else:
         print("Invalid character.")
 
-#Check if partial save file exists
+#Check if temp directory exists
 save_exists = False
-for file in os.listdir(rootdir):
-    if file == "partialcom.txt":
+for dirs in os.listdir(rootdir):
+    if dirs == "temp":
         save_exists = True
+        break
 
-#Generate line list to commit to database. If a save file exists, pull sig lines from there. If not, read data directory.
-if save_exists:
-    savefile = open("partialcom.txt", "r") #Opens save file
-    siglinestrs = savefile.read().split("&") #Splits save file into constituent line objects
-    siglinestrs.pop() #Gets rid of trailing empty line object
-    siglines = []
-    savefile.close()
-    for l in siglinestrs: #Populates list with line objects found in file
-        line = eval(l) #Turns "(freq, coh, chan, week, obs)" to (freq, coh, chan, week, obs)
-        siglines.append(line)
-    print("Save file read. Resuming partial commitment of " + str(len(siglines)) + " significant lines to the database.")
-else:
+#Generate line list to commit to database. If a temp directory exists, pull sig lines from there as built into populate(). If not, read data directory.
+if not save_exists:
     siglines = skim(verbosity)
-    print("All files read. Beginning commitment of " + str(len(siglines)) + " significant lines to the database.")
+    print("All files read. Beginning creation of temp directory.")
+    maketemp(siglines, verbosity)
+    print("temp directory created. Beginning commitment of " + str(len(siglines)) + " significant lines to the database.")
+    siglines.clear() #We no longer need this list.
 
-totallines = populate(siglines, verbosity)
+print("Resuming partial commitment.")
+totallines = populate(verbosity)
 print("Finished commitment of " + str(totallines) + " lines to the database.")
+
+#Check if temp directory exists again for removal.
+for dirs in os.listdir(rootdir):
+    if dirs == "temp":
+        save_exists = True
+        break
+
 if save_exists:
-    os.remove("partialcom.txt") #Removes save file at end of successful commitment
+    os.rmdir("temp") #Discards temp directory
