@@ -55,6 +55,10 @@ def skim(verbose):
                 print("\nList length exceeds chunk width. Moving currently stored lines into a temp file.")
             maketemp(sig_lines, tempnum)
             tempnum = tempnum + 1
+            
+    if verbose:
+        print("\nEnd of files reached. Moving remaining lines into a temp file.")
+    maketemp(sig_lines,tempnum)
 
 def maketemp(sig_lines, num):
     #Creates a file containing a small selection of line objects
