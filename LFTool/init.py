@@ -34,7 +34,7 @@ def skim(verbose):
 
         data = open(file, "r")
         for line in data:
-            currline = data.readline().split(' ') #Splits read line into frequency (index 0) and associated coherence (index 1)
+            currline = line.split(' ') #Splits read line into frequency (index 0) and associated coherence (index 1)
             if currline == ['']:
                 break
             if (currline[0].split('e')[1] == "+00"): #If the frequency isn't altered by the scientific notation after it... (i.e. 5*10^0)
