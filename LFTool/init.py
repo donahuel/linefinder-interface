@@ -28,6 +28,14 @@ def skim(verbose):
         obs = file.split('\\')[1]
         channel = file.split('\\')[3]
         numsiglines = len(sig_lines)
+        
+        #Find out which line belongs to which run, based on time.
+        if int(file.split('\\')[2].split('_')[1]) <= 2019 and int(file.split('\\')[2].split('_')[2]) <= 4:
+            run = 'ER14' #The experimental run before O3 began took place between 2019-03-01 and 2019-04-01
+        elif (int(file.split('\\')[2].split('_')[1]) > 2019) or (int(file.split('\\')[2].split('_')[1]) >= 2019 and int(file.split('\\')[2].split('_')[2]) >= 11):
+            run = 'O3B' #The second part of the O3 observing run took place between 2019-11-01 and 2020-03-28
+        else:
+            run = 'O3A' #The first part of the O3 observing run took place between ER14 and O3B
 
         if verbose:
             print("Currently working with file: " + file.split('\\')[4] + " for channel " + channel + " in week " + week + "...")
@@ -124,7 +132,6 @@ def populate(verbosity):
 print("Running...")
 #IMPORTANT: Put 'rootdir' as the main folder of this program, or else the database will not populate.
 rootdir = '<MAIN FOLDER HERE>' #This root directory will look different on every machine.
-run = 'O3B'
 threshold = 0.00 #Lines with coherences below this threshold will be ignored
 chunksize = 50 #Width of chunks pushed to database
 
