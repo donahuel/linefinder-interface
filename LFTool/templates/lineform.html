@@ -27,7 +27,9 @@
 
   <br><label for="run">Choose a run:</label>
   <select name="run" id="run">
-      <option value="O2">O3B</option>
+      <option value="ER14">ER14</option>
+      <option value="O3A">O3A</option>
+      <option value="O3B">O3B</option>
   </select>
   
     <dl>
@@ -64,12 +66,12 @@ This is a tool used to parse through, filter, and present relevant long-term coh
 This tool is built in Flask by members of Jay Tasson's research group at <a href="https://carleton.edu">Carleton College.</a>
 
 <h3>What do each of these fields do?</h3>
-<i>Observatory:</i> This field filters the observatory the searched data comes from--either H1 (Hanford, WA) or L1 (Livingston, LA). Data from both observatories are shown by default.</br>
-<i>Run:</i> This field filters the detector run the searched data comes from. Right now, the only available data comes from run O3B. Once O4 starts (<a href="https://www.ligo.org/scientists/GWEMalerts.php">proj: June 2022</a>), the database will be updated with new data as it comes in.</br>
-<i>Date range:</i> This field bounds the start and end date the searched data comes from. By default, data from all times are shown, and are sorted by week.</br>
-<i>Channel:</i> This field filters the detector channels the searched data comes from. By default, data from all auxiliary channels are shown.</br>
-<i>Frequency:</i> These fields bound the frequency of the searched data. By default, all frequencies are shown. Frequencies of data in this database range from 0Hz to 2000Hz.</br>
-<i>Coherence:</i> These fields bound the coherence of the searched data when compared to the main gravitational wave channel. By default, all coherences above 0.95 are shown. Coherences higher than 0.95 are typically regarded as "significant" coherences. This database currently does not contain any lines with insignificant coherences. Read more about coherence <a href="https://en.wikipedia.org/wiki/Coherence_(physics)">here.</a></br> 
+<b>Observatory:</b> This field filters the observatory the searched data comes from--either H1 (Hanford, WA) or L1 (Livingston, LA). Data from both observatories are shown by default.</br>
+<b>Run:</b> This field filters the detector run the searched data comes from. Right now, the only available data comes from run O3, which took place in three parts: <i>ER14</i> (2019-03-01 to 2019-04-01), <i>O3A</i> (2019-04-01 to 2019-10-01), and <i>O3B</i> (2019-11-01 to 2020-03-28). Once O4 starts (<a href="https://www.ligo.org/scientists/GWEMalerts.php">proj: June 2022</a>), the database will be updated with new data as it comes in.</br>
+<b>Date range:</b> This field bounds the start and end date the searched data comes from. By default, data from all times are shown, and are sorted by week.</br>
+<b>Channel:</b> This field filters the detector channels the searched data comes from. By default, data from all auxiliary channels are shown.</br>
+<b>Frequency:</b> These fields bound the frequency of the searched data. By default, all frequencies are shown. Frequencies of data in this database range from 0Hz to 2000Hz.</br>
+<b>Coherence:</b> These fields bound the coherence of the searched data when compared to the main gravitational wave channel. By default, all coherences above 0.95 are shown. Coherences higher than 0.95 are typically regarded as "significant" coherences. This database currently does not contain any lines with insignificant coherences. Read more about coherence <a href="https://en.wikipedia.org/wiki/Coherence_(physics)">here.</a></br> 
 
 <h3>Where can I see more?</h3>
 <b>Contact us:</b></br>
