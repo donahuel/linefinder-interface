@@ -149,8 +149,6 @@ def index():
                 obCheck = False #Observatory
                 chCheck = False #Channel
 
-                # Convert epoch timestamp of line object into human date
-
                 if request.form.get('H1') == l.obs or request.form.get('L1') == l.obs or (request.form.get('H1') == request.form.get('L1') == None): #Check observatory selection. If a line has a desired observatory,
                     obCheck = True #pass the check.
                 if obCheck: #If observatory check is passed,
