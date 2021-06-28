@@ -5,6 +5,7 @@ from app import db, Line
 import numpy as np
 import os
 import math as m
+import time as t
 
 def skim(verbose):
     #Skims files in data folder and stores read line objects in a list, which is returned.
@@ -25,12 +26,13 @@ def skim(verbose):
     print("Beginning file reading...")
     for file in file_list:
         week = file.split('\\')[2].split('_')[1] + "-" + file.split('\\')[2].split('_')[2] + "-" + file.split('\\')[2].split('_')[3]
+        time = int(t.mktime(t.strptime(week, '%Y-%m-%d')))
         obs = file.split('\\')[1]
         channel = file.split('\\')[3]
         numsiglines = len(sig_lines)
-        
+
         #Find out which line belongs to which run, based on time.
-        if int(file.split('\\')[2].split('_')[1]) <= 2019 and int(file.split('\\')[2].split('_')[2]) <= 4:
+        if int(file.split('\\')[2].split('_')[1]) <= 2019 and int(file.split('\\')[2].split('_')[2]) < 4:
             run = 'ER14' #The experimental run before O3 began took place between 2019-03-01 and 2019-04-01
         elif (int(file.split('\\')[2].split('_')[1]) > 2019) or (int(file.split('\\')[2].split('_')[1]) >= 2019 and int(file.split('\\')[2].split('_')[2]) >= 11):
             run = 'O3B' #The second part of the O3 observing run took place between 2019-11-01 and 2020-03-28
@@ -54,7 +56,7 @@ def skim(verbose):
             coh = float(currline[1]) #yStoring the coherence is... simpler.
 
             if coh > threshold and coh < 1: #Eliminates coherences below the threshold and extraneous coherences above 1 (with fscan, this shouldn't be an issue)
-                sig_lines.append((freq, coh, channel, week, obs))
+                sig_lines.append((freq, coh, channel, time, obs, run))
         if verbose:
             print("Moving to next file. Found " + str(len(sig_lines) - numsiglines) + " significant lines in file. Threshold is: " + str(threshold))
     
@@ -63,10 +65,6 @@ def skim(verbose):
                 print("\nList length exceeds chunk width. Moving currently stored lines into a temp file.")
             maketemp(sig_lines, tempnum)
             tempnum = tempnum + 1
-            
-    if verbose:
-        print("\nEnd of files reached. Moving remaining lines into a temp file.")
-    maketemp(sig_lines,tempnum)
 
 def maketemp(sig_lines, num):
     #Creates a file containing a small selection of line objects
@@ -115,8 +113,8 @@ def populate(verbosity):
             print("End of line list reached.")
             break
         while len(sig_lines) != 0:
-            freq, coh, channel, week, obs = sig_lines[0] #Get first line in sig_lines list
-            line = Line(freq=freq, coh=coh, week=week, run=run, channel=channel, obs=obs) #Create the line object from pertinent information
+            freq, coh, channel, time, obs, run = sig_lines[0] #Get first line in sig_lines list
+            line = Line(freq=freq, coh=coh, time=time, run=run, channel=channel, obs=obs) #Create the line object from pertinent information
             db.session.add(line) #Add line to DB session
             sig_lines.pop(0) #Pop line off of list
             commitedlines = commitedlines + 1 #Count the added line
