@@ -135,7 +135,7 @@ def index():
         stringListSortedBy.clear() #Clears list in the event of repeated queries (prevents duplication of line objects)
         id = 0 #A counting variable for the sorting dictionary, to be defined later
         
-        #Set of lines which satisfy run, coherence, and frequency search criteria. This cuts down search results dramatically compared to starting with the entire database.
+        #Set of lines which satisfy run, coherence, time, and frequency search criteria. This cuts down search results dramatically compared to starting with the entire database.
         lines = Line.query.filter(
             Line.run == searchForm.run.data,
             (searchParams[3] <= Line.freq) & (Line.freq <= searchParams[4]),
