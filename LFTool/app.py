@@ -16,13 +16,13 @@ class Line(db.Model):
     id = db.Column(db.Integer, primary_key=True) #Unique ID for each line
     run = db.Column(db.String(10)) #Run for each line
     obs = db.Column(db.String(10)) #Observatory for each line
-    week = db.Column(db.String(50)) #Week for each line (e.g. 2017/01/01)
+    time = db.Column(db.Integer) #Epoch timestamp for each line, that can be converted into a date (e.g. 1483228800, which can become 2017/01/01)
     channel = db.Column(db.String(50)) #Channel for each line (e.g. L1_PEM-CS_MAG_LVEA_VERTEX_Z)
     freq = db.Column(db.Float) #Frequency for each line
     coh = db.Column(db.Float) #Coherence for each line
    
     def __repr__(self):
-        return f"{self.run},{self.obs},{self.week},{self.channel},{self.freq},{self.coh}"
+        return f"{self.run},{self.obs},{self.time},{self.channel},{self.freq},{self.coh}"
     
 #Search form fields
 class SearchForm(Form):
@@ -126,10 +126,10 @@ def index():
         endDay = searchParams[1][8:]
 
         #Convert user inputted dates into epoch timestamp
-        sString = startYear + "-" + startMonth + "-" + startDay + " 00:00:00"
-        sDate = int(time.mktime(time.strptime(sString, "%Y-%m-%d %H:%M:%S")))
-        eString = endYear + "-" + endMonth + "-" + endDay + " 23:59:59"
-        eDate = int(time.mktime(time.strptime(eString, "%Y-%m-%d %H:%M:%S")))
+        sString = startYear + "-" + startMonth + "-" + startDay
+        sDate = int(time.mktime(time.strptime(sString, '%Y-%m-%d')))
+        eString = endYear + "-" + endMonth + "-" + endDay
+        eDate = int(time.mktime(time.strptime(eString, '%Y-%m-%d')))
 
         stringListSortedBy = [] #Generates array where sorted list is stored (and eventually printed from)
         stringListSortedBy.clear() #Clears list in the event of repeated queries (prevents duplication of line objects)
@@ -139,31 +139,21 @@ def index():
         lines = Line.query.filter(
             Line.run == searchForm.run.data,
             (searchParams[3] <= Line.freq) & (Line.freq <= searchParams[4]),
-            (searchParams[5] <= Line.coh) & (Line.coh <= searchParams[6])
-        ).limit(2500)
+            (searchParams[5] <= Line.coh) & (Line.coh <= searchParams[6]),
+            (sDate <= Line.time) & (Line.time <= eDate)
+        ).limit(25000)
         
         for l in lines: #For each line...
             if len(dLines) < 2500: #Makes sure dLines does not swell too big, prevents breaking of page
                 #Set checks for each field to false
-                tmCheck = False #Time
                 obCheck = False #Observatory
                 chCheck = False #Channel
 
-                # Slice the weeks of the line object into year, month, and day components
-                year = l.week[:4]
-                month = l.week[5:7]
-                day = l.week[8:]
-
-                # Convert these time components into an epoch timestamp
-                tString = year + "-" + month + "-" + day + " 00:00:00"
-                date = int(time.mktime(time.strptime(tString, "%Y-%m-%d %H:%M:%S")))
+                # Convert epoch timestamp of line object into human date
 
                 if request.form.get('H1') == l.obs or request.form.get('L1') == l.obs or (request.form.get('H1') == request.form.get('L1') == None): #Check observatory selection. If a line has a desired observatory,
                     obCheck = True #pass the check.
                 if obCheck: #If observatory check is passed,
-                    if (sDate <= date and date <= eDate): #and date's epoch timestamp falls between the bounds' epoch timestamps,
-                        tmCheck = True #pass the check.
-                if tmCheck: #If time check is passed,
                     if searchForm.channel.data in l.channel or searchForm.channel.data.upper() in l.channel or len(searchForm.channel.data) == 0: #and channel matches search query OR channel field is empty,
                         chCheck = True #pass the check.
                 if chCheck: #If channel (and all other) checks are passed,
@@ -175,7 +165,8 @@ def index():
             lString = str(l)
             subList.append(lString.split(","))
 
-        for l in subList: #...and floats. We then append these objects to the previously defined sortedBy list.
+        for l in subList: #...and floats. And convert epoch timestamp into human date. We then append these objects to the previously defined sortedBy list.
+            l[2] = time.strftime('%Y-%m-%d', time.localtime(int(l[2])))
             l[4] = float(l[4])
             l[5] = float(l[5])
             sortedBy.append(l)
@@ -273,4 +264,4 @@ def download():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
