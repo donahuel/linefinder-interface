@@ -1,11 +1,11 @@
 #This file produces a web interface which searches a database populated by init.py for line objects and displays the results on a webpage.
 #Authors: Larry Donahue, Vincent He Malachy Bloom, Michael Yang
 
-from flask import Flask, render_template, url_for, flash, request, redirect, Response, send_file
+from flask import Flask, render_template, request, Response, send_file
 from flask_sqlalchemy import SQLAlchemy
-from wtforms import Form, StringField, validators
+from wtforms import Form, StringField
 import csv
-import numbers
+import time
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///line_finder.db'
@@ -48,7 +48,7 @@ def index():
 
     if request.method == 'POST' and searchForm.validate():
 
-        dLines.clear() #Clears dLines in the event of repeated queries (prevents duplication of line objects)
+        dLines.clear() #Clears dLines list in the event of repeated queries (prevents duplication of line objects)
         sortedBy.clear() #Clears sorted list in the event of repeated queries (prevents duplication of line objects)
 
         #The following blocks of code catch errors in user input in the date section.        
@@ -99,7 +99,7 @@ def index():
                 return render_template('lineform.html', form=searchForm, errormessage="Error: Lower bound of coherence must be less than or equal to upper bound.")
 
         #Assigning default values to fields. These are the values that will be altered by the search form data. The run and observatories' default values are automatically selected by the interface.
-        searchParams = ["0000/01/01", "9999/12/31", "", -0.01, 9999, -0.01, 9.99]
+        searchParams = ["1970/01/01", "2050/12/31", "", -0.01, 9999, -0.01, 9.99]
 
         #Altering default values based on user-defined query. Run is not present due to the interface deciding the value automatically, and observatories' checkbox nature makes them work differently.
         if len(searchForm.stDate.data) != 0:
@@ -117,8 +117,22 @@ def index():
         if len(searchForm.cohub.data) != 0:
             searchParams[6] = searchForm.cohub.data
 
-        print(searchForm.run.data, request.form.get('H1'), request.form.get('L1'), searchForm.stDate.data, searchForm.endDate.data, searchForm.channel.data, searchForm.freqlb.data, searchForm.frequb.data, searchForm.cohlb.data, searchForm.cohub.data)
+        #Slice user inputted dates into their components
+        startYear = searchParams[0][:4]
+        startMonth = searchParams[0][5:7]
+        startDay = searchParams[0][8:]
+        endYear = searchParams[1][:4]
+        endMonth = searchParams[1][5:7]
+        endDay = searchParams[1][8:]
+
+        #Convert user inputted dates into epoch timestamp
+        sString = startYear + "-" + startMonth + "-" + startDay + " 00:00:00"
+        sDate = int(time.mktime(time.strptime(sString, "%Y-%m-%d %H:%M:%S")))
+        eString = endYear + "-" + endMonth + "-" + endDay + " 23:59:59"
+        eDate = int(time.mktime(time.strptime(eString, "%Y-%m-%d %H:%M:%S")))
+
         stringListSortedBy = [] #Generates array where sorted list is stored (and eventually printed from)
+        stringListSortedBy.clear() #Clears list in the event of repeated queries (prevents duplication of line objects)
         id = 0 #A counting variable for the sorting dictionary, to be defined later
         
         #Set of lines which satisfy run, coherence, and frequency search criteria. This cuts down search results dramatically compared to starting with the entire database.
@@ -127,51 +141,33 @@ def index():
             (searchParams[3] <= Line.freq) & (Line.freq <= searchParams[4]),
             (searchParams[5] <= Line.coh) & (Line.coh <= searchParams[6])
         ).limit(2500)
-        print(lines)
         
         for l in lines: #For each line...
             if len(dLines) < 2500: #Makes sure dLines does not swell too big, prevents breaking of page
                 #Set checks for each field to false
-                yrCheck = False
-                monthCheck = False
-                dayCheck = False
-                obCheck = False
-                chCheck = False
+                tmCheck = False #Time
+                obCheck = False #Observatory
+                chCheck = False #Channel
 
-                # Slice the weeks of the line object and both user queries into year, month, and day components
+                # Slice the weeks of the line object into year, month, and day components
                 year = l.week[:4]
                 month = l.week[5:7]
                 day = l.week[8:]
-                startYear = searchParams[0][:4]
-                startMonth = searchParams[0][5:7]
-                startDay = searchParams[0][8:]
-                endYear = searchParams[1][:4]
-                endMonth = searchParams[1][5:7]
-                endDay = searchParams[1][8:]
 
-                if request.form.get('H1') == l.obs or request.form.get('L1') == l.obs or (request.form.get('H1') == request.form.get('L1') == None): #Check observatory selection
-                    obCheck = True
-                if obCheck: #If observatory check is passed...
-                    if (startYear < year and endYear > year): #...and year is between startYear and endYear search query...
-                        yrCheck = True #...pass year range check.
-                        monthCheck = True #...pass month range check.
-                        dayCheck = True #...pass day range check.
-                    elif (startYear == year or endYear == year): #...and year is the same as either startYear or endYear search query...
-                        yrCheck = True #...pass year range check.
-                if yrCheck: #If year range check is passed...
-                    if (startMonth < month and endMonth > month): #...and month range matches search query...
-                        monthCheck = True #...pass month range check.
-                        dayCheck = True
-                    elif (startMonth == month or endMonth == month):
-                        monthCheck = True
-                if monthCheck: #If month range check is passed...
-                    if (startDay <= day and endDay >= day): #...and day range matches search query...
-                        dayCheck = True #...pass day range check.
-                if dayCheck: #If day range check is passed...
-                    if searchForm.channel.data in l.channel or searchForm.channel.data.upper() in l.channel or len(searchForm.channel.data) == 0: #...and channel matches search query OR channel field is empty...
-                        chCheck = True
-                if chCheck: #If channel (and run, week) checks are passed...
-                    dLines.append(l) #Add line to desired lines
+                # Convert these time components into an epoch timestamp
+                tString = year + "-" + month + "-" + day + " 00:00:00"
+                date = int(time.mktime(time.strptime(tString, "%Y-%m-%d %H:%M:%S")))
+
+                if request.form.get('H1') == l.obs or request.form.get('L1') == l.obs or (request.form.get('H1') == request.form.get('L1') == None): #Check observatory selection. If a line has a desired observatory,
+                    obCheck = True #pass the check.
+                if obCheck: #If observatory check is passed,
+                    if (sDate <= date and date <= eDate): #and date's epoch timestamp falls between the bounds' epoch timestamps,
+                        tmCheck = True #pass the check.
+                if tmCheck: #If time check is passed,
+                    if searchForm.channel.data in l.channel or searchForm.channel.data.upper() in l.channel or len(searchForm.channel.data) == 0: #and channel matches search query OR channel field is empty,
+                        chCheck = True #pass the check.
+                if chCheck: #If channel (and all other) checks are passed,
+                    dLines.append(l) #add line to desired lines list.
 
         #Now that desired lines are generated, begin sorting
         subList = [] #Container for simplified dLines
@@ -261,8 +257,8 @@ def index():
     else:
         "Something went wrong."
 
-@app.route("/download")
-def download():
+@app.route("/data.csv")
+def getPlotCSV():
 
     csv = str('Run: ' + run + ',') + str('Observatory: ' + obs + ',') + str('Time Range: ' + stTime + ' to ' + enTime + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
     for line in dLines:
@@ -273,7 +269,7 @@ def download():
         csv, 
         mimetype="text/csv",
         headers={"Content-disposition":
-                 "attachment; filename=Linefinder.csv"})
+                 "attachment; filename=myplot.csv"})
 
 
 if __name__ == '__main__':
