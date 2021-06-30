@@ -1,5 +1,5 @@
 #This file produces a web interface which searches a database populated by init.py for line objects and displays the results on a webpage.
-#Authors: Larry Donahue, Vincent He Malachy Bloom, Michael Yang
+#Authors: Larry Donahue, Vincent He, Malachy Bloom, Michael Yang
 
 from flask import Flask, render_template, request, Response, send_file
 from flask_sqlalchemy import SQLAlchemy
@@ -12,7 +12,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///line_finder.db'
 db = SQLAlchemy(app)
     
 #The database itself, this is the class containing information about each row
-class Line(db.Model):
+class weekly(db.Model): #Weekly coherences
     id = db.Column(db.Integer, primary_key=True) #Unique ID for each line
     run = db.Column(db.String(10)) #Run for each line
     obs = db.Column(db.String(10)) #Observatory for each line
@@ -22,8 +22,20 @@ class Line(db.Model):
     coh = db.Column(db.Float) #Coherence for each line
    
     def __repr__(self):
-        return f"{self.run},{self.obs},{self.time},{self.channel},{self.freq},{self.coh}"
-    
+        return f"W,{self.run},{self.obs},{self.time},{self.channel},{self.freq},{self.coh}"
+
+class monthly(db.Model): #Monthly coherences. Identical to weekly coherences, with the important distinction of range that necessitates a new table/database model.
+    id = db.Column(db.Integer, primary_key=True) #Unique ID for each line
+    run = db.Column(db.String(10)) #Run for each line
+    obs = db.Column(db.String(10)) #Observatory for each line
+    time = db.Column(db.Integer) #Epoch timestamp for each line, that can be converted into a date (e.g. 1483228800, which can become 2017/01/01)
+    channel = db.Column(db.String(50)) #Channel for each line (e.g. L1_PEM-CS_MAG_LVEA_VERTEX_Z)
+    freq = db.Column(db.Float) #Frequency for each line
+    coh = db.Column(db.Float) #Coherence for each line
+   
+    def __repr__(self):
+        return f"M,{self.run},{self.obs},{self.time},{self.channel},{self.freq},{self.coh}"
+            
 #Search form fields
 class SearchForm(Form):
     run = StringField('Run:')
@@ -136,14 +148,25 @@ def index():
         id = 0 #A counting variable for the sorting dictionary, to be defined later
         
         #Set of lines which satisfy run, coherence, time, and frequency search criteria. This cuts down search results dramatically compared to starting with the entire database.
-        lines = Line.query.filter(
-            Line.run == searchForm.run.data,
-            (searchParams[3] <= Line.freq) & (Line.freq <= searchParams[4]),
-            (searchParams[5] <= Line.coh) & (Line.coh <= searchParams[6]),
-            (sDate <= Line.time) & (Line.time <= eDate)
-        ).limit(25000)
+        #Depending on what time range is specified, we either look at weekly or monthly coherences.
+    
+        if request.form.get('range') == "Weekly" or request.form.get('range') == None:
+            lines = weekly.query.filter(
+                weekly.run == searchForm.run.data,
+                (searchParams[3] <= weekly.freq) & (weekly.freq <= searchParams[4]),
+                (searchParams[5] <= weekly.coh) & (weekly.coh <= searchParams[6]),
+                (sDate <= weekly.time) & (weekly.time <= eDate)
+            ).limit(25000)
+        if request.form.get('range') == "Monthly":
+            lines = monthly.query.filter(
+                monthly.run == searchForm.run.data,
+                (searchParams[3] <= monthly.freq) & (monthly.freq <= searchParams[4]),
+                (searchParams[5] <= monthly.coh) & (monthly.coh <= searchParams[6]),
+                (sDate <= monthly.time) & (monthly.time <= eDate)
+            ).limit(25000)
         
         for l in lines: #For each line...
+            print(l)
             if len(dLines) < 2500: #Makes sure dLines does not swell too big, prevents breaking of page
                 #Set checks for each field to false
                 obCheck = False #Observatory
@@ -164,15 +187,15 @@ def index():
             subList.append(lString.split(","))
 
         for l in subList: #...and floats. And convert epoch timestamp into human date. We then append these objects to the previously defined sortedBy list.
-            l[2] = time.strftime('%Y-%m-%d', time.localtime(int(l[2])))
-            l[4] = float(l[4])
+            l[3] = time.strftime('%Y-%m-%d', time.localtime(int(l[3])))
             l[5] = float(l[5])
+            l[6] = float(l[6])
             sortedBy.append(l)
 
         #Generate pretty list that ends up getting displayed by enumerating over sorted list
         for i, lines in enumerate(sortedBy):
             id += 1
-            newDict = {"id" : id , "run" : lines[0], "obs" : lines[1], "week" : lines[2], "channel" : lines[3], "freq" : lines[4], "coh" : lines[5]}
+            newDict = {"id" : id , "run" : lines[1], "obs" : lines[2], "week" : lines[3], "channel" : lines[4], "freq" : lines[5], "coh" : lines[6]}
             stringListSortedBy.append(newDict)
 
         #Get the value from the dropdown menu, sort by that value.
@@ -232,13 +255,13 @@ def index():
             cohUB = '1'
 
         if len(dLines) == 2500:
-            return render_template('lineresult.html', dlines=stringListSortedBy, warning="Line search limited to the first 2500 results found. Try confining bounds for a more specific search. Lines with coherences or frequencies outside the ranges shown here may exist.")
+            return render_template('lineresult.html', dlines=stringListSortedBy, warning="Line search limited to the first 2500 results found. Try confining bounds for a more specific search. Lines with coherences or frequencies outside the ranges shown here may exist.", type=request.form.get('range'))
 
         if len(dLines) == 0:
-            return render_template('lineresult.html', dlines=stringListSortedBy, warning="No lines found. Try loosening bounds for a more broad search.")
+            return render_template('lineresult.html', dlines=stringListSortedBy, warning="No lines found. Try loosening bounds for a more broad search.", type=request.form.get('range'))
         
         else:
-            return render_template('lineresult.html', dlines=stringListSortedBy, warning="")
+            return render_template('lineresult.html', dlines=stringListSortedBy, warning="", type=request.form.get('range'))
 
     if request.method == 'GET':
         return render_template('lineform.html', form=searchForm, errormessage="", helpmessage="")
