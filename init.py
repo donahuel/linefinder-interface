@@ -1,7 +1,7 @@
 #This file populates a SQLite database with information about various lines
 #Authors: Larry Donahue, Malachy Bloom, Michael Yang, Vincent He
 
-from app import db, Line
+from app import db, weekly, monthly
 import numpy as np
 import os
 import math as m
@@ -25,22 +25,23 @@ def skim(verbose):
     sig_lines = []
     print("Beginning file reading...")
     for file in file_list:
-        week = file.split('\\')[2].split('_')[1] + "-" + file.split('\\')[2].split('_')[2] + "-" + file.split('\\')[2].split('_')[3]
+        week = file.split('\\')[3].split('_')[1] + "-" + file.split('\\')[3].split('_')[2] + "-" + file.split('\\')[3].split('_')[3]
         time = int(t.mktime(t.strptime(week, '%Y-%m-%d')))
-        obs = file.split('\\')[1]
-        channel = file.split('\\')[3]
+        obs = file.split('\\')[2]
+        channel = file.split('\\')[4]
+        datatype = file.split('\\')[1]
         numsiglines = len(sig_lines)
 
         #Find out which line belongs to which run, based on time.
-        if int(file.split('\\')[2].split('_')[1]) <= 2019 and int(file.split('\\')[2].split('_')[2]) < 4:
+        if int(file.split('\\')[3].split('_')[1]) <= 2019 and int(file.split('\\')[3].split('_')[2]) < 4:
             run = 'ER14' #The experimental run before O3 began took place between 2019-03-01 and 2019-04-01
-        elif (int(file.split('\\')[2].split('_')[1]) > 2019) or (int(file.split('\\')[2].split('_')[1]) >= 2019 and int(file.split('\\')[2].split('_')[2]) >= 11):
+        elif (int(file.split('\\')[3].split('_')[1]) > 2019) or (int(file.split('\\')[3].split('_')[1]) >= 2019 and int(file.split('\\')[3].split('_')[2]) >= 11):
             run = 'O3B' #The second part of the O3 observing run took place between 2019-11-01 and 2020-03-28
         else:
             run = 'O3A' #The first part of the O3 observing run took place between ER14 and O3B
 
         if verbose:
-            print("Currently working with file: " + file.split('\\')[4] + " for channel " + channel + " in week " + week + "...")
+            print("Currently working with file: " + file.split('\\')[5] + " for channel " + channel + " in week " + week + "...")
 
         data = open(file, "r")
         for line in data:
@@ -56,7 +57,7 @@ def skim(verbose):
             coh = float(currline[1]) #yStoring the coherence is... simpler.
 
             if coh > threshold and coh < 1: #Eliminates coherences below the threshold and extraneous coherences above 1 (with fscan, this shouldn't be an issue)
-                sig_lines.append((freq, coh, channel, time, obs, run))
+                sig_lines.append((datatype, freq, coh, channel, time, obs, run))
         if verbose:
             print("Moving to next file. Found " + str(len(sig_lines) - numsiglines) + " significant lines in file. Threshold is: " + str(threshold))
     
@@ -113,8 +114,11 @@ def populate(verbosity):
             print("End of line list reached.")
             break
         while len(sig_lines) != 0:
-            freq, coh, channel, time, obs, run = sig_lines[0] #Get first line in sig_lines list
-            line = Line(freq=freq, coh=coh, time=time, run=run, channel=channel, obs=obs) #Create the line object from pertinent information
+            datatype, freq, coh, channel, time, obs, run = sig_lines[0] #Get first line in sig_lines list
+            if datatype == "weekly":
+                line = weekly(freq=freq, coh=coh, time=time, run=run, channel=channel, obs=obs) #Create the line object in the weekly table from pertinent information
+            else:
+                line = monthly(freq=freq, coh=coh, time=time, run=run, channel=channel, obs=obs) #If it's not a weekly coherence, it's a monthly one.
             db.session.add(line) #Add line to DB session
             sig_lines.pop(0) #Pop line off of list
             commitedlines = commitedlines + 1 #Count the added line
