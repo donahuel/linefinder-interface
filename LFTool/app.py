@@ -1,5 +1,5 @@
 #This file produces a web interface which searches a database populated by init.py for line objects and displays the results on a webpage.
-#Authors: Larry Donahue, Vincent He, Malachy Bloom, Michael Yang
+#Authors: Larry Donahue, Vincent He Malachy Bloom, Michael Yang
 
 from flask import Flask, render_template, request, Response, send_file
 from flask_sqlalchemy import SQLAlchemy
@@ -14,24 +14,24 @@ db = SQLAlchemy(app)
 #The database itself, this is the class containing information about each row
 class weekly(db.Model): #Weekly coherences
     id = db.Column(db.Integer, primary_key=True) #Unique ID for each line
-    run = db.Column(db.String(10)) #Run for each line
+    run = db.Column(db.String(10), index=True) #Run for each line
     obs = db.Column(db.String(10)) #Observatory for each line
-    time = db.Column(db.Integer) #Epoch timestamp for each line, that can be converted into a date (e.g. 1483228800, which can become 2017/01/01)
+    time = db.Column(db.Integer, index=True) #Epoch timestamp for each line, that can be converted into a date (e.g. 1483228800, which can become 2017/01/01)
     channel = db.Column(db.String(50)) #Channel for each line (e.g. L1_PEM-CS_MAG_LVEA_VERTEX_Z)
-    freq = db.Column(db.Float) #Frequency for each line
-    coh = db.Column(db.Float) #Coherence for each line
+    freq = db.Column(db.Float, index=True) #Frequency for each line
+    coh = db.Column(db.Float, index=True) #Coherence for each line
    
     def __repr__(self):
         return f"W,{self.run},{self.obs},{self.time},{self.channel},{self.freq},{self.coh}"
 
 class monthly(db.Model): #Monthly coherences. Identical to weekly coherences, with the important distinction of range that necessitates a new table/database model.
     id = db.Column(db.Integer, primary_key=True) #Unique ID for each line
-    run = db.Column(db.String(10)) #Run for each line
+    run = db.Column(db.String(10), index=True) #Run for each line
     obs = db.Column(db.String(10)) #Observatory for each line
-    time = db.Column(db.Integer) #Epoch timestamp for each line, that can be converted into a date (e.g. 1483228800, which can become 2017/01/01)
+    time = db.Column(db.Integer, index=True) #Epoch timestamp for each line, that can be converted into a date (e.g. 1483228800, which can become 2017/01/01)
     channel = db.Column(db.String(50)) #Channel for each line (e.g. L1_PEM-CS_MAG_LVEA_VERTEX_Z)
-    freq = db.Column(db.Float) #Frequency for each line
-    coh = db.Column(db.Float) #Coherence for each line
+    freq = db.Column(db.Float, index=True) #Frequency for each line
+    coh = db.Column(db.Float, index=True) #Coherence for each line
    
     def __repr__(self):
         return f"M,{self.run},{self.obs},{self.time},{self.channel},{self.freq},{self.coh}"
@@ -147,12 +147,13 @@ def index():
         stringListSortedBy.clear() #Clears list in the event of repeated queries (prevents duplication of line objects)
         id = 0 #A counting variable for the sorting dictionary, to be defined later
         
-        #Set of lines which satisfy run, coherence, time, and frequency search criteria. This cuts down search results dramatically compared to starting with the entire database.
+        #Set of lines which satisfy run, obsrevatory, coherence, time, and frequency search criteria. This cuts down search results dramatically compared to starting with the entire database.
         #Depending on what time range is specified, we either look at weekly or monthly coherences.
     
         if request.form.get('range') == "Weekly" or request.form.get('range') == None:
             lines = weekly.query.filter(
                 weekly.run == searchForm.run.data,
+                weekly.obs == searchForm.obs.data,
                 (searchParams[3] <= weekly.freq) & (weekly.freq <= searchParams[4]),
                 (searchParams[5] <= weekly.coh) & (weekly.coh <= searchParams[6]),
                 (sDate <= weekly.time) & (weekly.time <= eDate)
@@ -160,6 +161,7 @@ def index():
         if request.form.get('range') == "Monthly":
             lines = monthly.query.filter(
                 monthly.run == searchForm.run.data,
+                monthly.obs == searchForm.obs.data,
                 (searchParams[3] <= monthly.freq) & (monthly.freq <= searchParams[4]),
                 (searchParams[5] <= monthly.coh) & (monthly.coh <= searchParams[6]),
                 (sDate <= monthly.time) & (monthly.time <= eDate)
@@ -168,15 +170,11 @@ def index():
         for l in lines: #For each line...
             if len(dLines) < 2500: #Makes sure dLines does not swell too big, prevents breaking of page
                 #Set checks for each field to false
-                obCheck = False #Observatory
                 chCheck = False #Channel
 
-                if request.form.get('H1') == l.obs or request.form.get('L1') == l.obs or (request.form.get('H1') == request.form.get('L1') == None): #Check observatory selection. If a line has a desired observatory,
-                    obCheck = True #pass the check.
-                if obCheck: #If observatory check is passed,
-                    if searchForm.channel.data in l.channel or searchForm.channel.data.upper() in l.channel or len(searchForm.channel.data) == 0: #and channel matches search query OR channel field is empty,
-                        chCheck = True #pass the check.
-                if chCheck: #If channel (and all other) checks are passed,
+                if searchForm.channel.data in l.channel or searchForm.channel.data.upper() in l.channel or len(searchForm.channel.data) == 0: #and channel matches search query OR channel field is empty,
+                    chCheck = True #pass the check.
+                if chCheck: #If channel check is passed,
                     dLines.append(l) #add line to desired lines list.
 
         #Now that desired lines are generated, begin sorting
@@ -214,12 +212,7 @@ def index():
             run = 'All'
             
         global obs
-        if (request.form.get('H1') == 'H1' and request.form.get('L1') == 'L1') or request.form.get('H1') == request.form.get('L1') == None:
-            obs = 'H1 and L1'
-        elif request.form.get('H1') == None:
-            obs = 'L1'
-        elif request.form.get('L1') == None:
-            obs = 'H1'
+        obs = searchForm.obs.data
 
         global stTime
         stTime = searchForm.stDate.data
@@ -281,7 +274,6 @@ def download():
         mimetype="text/csv",
         headers={"Content-disposition":
                  "attachment; filename=Linefinder.csv"})
-
 
 if __name__ == '__main__':
     app.run()
