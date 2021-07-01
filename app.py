@@ -172,7 +172,7 @@ def index():
             lines = monthly.query.filter(
                 monthly.run == searchForm.run.data,
                 monthly.obs == searchForm.obs.data,
-                weekly.channel.in_(dChannels),
+                monthly.channel.in_(dChannels),
                 (searchParams[3] <= monthly.freq) & (monthly.freq <= searchParams[4]),
                 (searchParams[5] <= monthly.coh) & (monthly.coh <= searchParams[6]),
                 (sDate <= monthly.time) & (monthly.time <= eDate)
