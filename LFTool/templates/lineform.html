@@ -44,8 +44,14 @@
       {{ render_field(form.cohlb) }}
       </table>
     </dl>
-    <p><input type=submit value=Search></p>
+    <p><button onclick="search()" id="q">Search</button></p>
   
+  <script>
+  function search() {
+    document.getElementById("q").innerHTML = "Searching...";
+  }
+  </script>
+
   <label for="sorting">Choose a sorting method:</label>
   <select name="sorting" id="sorting">
       <option value="id">id</option>
