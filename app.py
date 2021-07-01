@@ -143,6 +143,15 @@ def index():
         eString = endYear + "-" + endMonth + "-" + endDay
         eDate = int(time.mktime(time.strptime(eString, '%Y-%m-%d')))
 
+        #Prepare channel query
+        uChannel = searchForm.channel.data.upper() #All channels have entirely uppercase names. This is the user input.
+        dChannels = [] #List of desired channels
+        channelList = open("channels.txt", "r") #List of channels in the database. This file should always exist.
+        for c in channelList.readlines():
+            if uChannel in c:
+                dChannels.append(c.strip("\n")) #If user search matches channel name, append to list of desired channels.
+        channelList.close()
+
         stringListSortedBy = [] #Generates array where sorted list is stored (and eventually printed from)
         stringListSortedBy.clear() #Clears list in the event of repeated queries (prevents duplication of line objects)
         id = 0 #A counting variable for the sorting dictionary, to be defined later
@@ -154,28 +163,23 @@ def index():
             lines = weekly.query.filter(
                 weekly.run == searchForm.run.data,
                 weekly.obs == searchForm.obs.data,
+                weekly.channel.in_(dChannels),
                 (searchParams[3] <= weekly.freq) & (weekly.freq <= searchParams[4]),
                 (searchParams[5] <= weekly.coh) & (weekly.coh <= searchParams[6]),
                 (sDate <= weekly.time) & (weekly.time <= eDate)
-            ).limit(25000)
+            ).limit(2500)
         if request.form.get('range') == "Monthly":
             lines = monthly.query.filter(
                 monthly.run == searchForm.run.data,
                 monthly.obs == searchForm.obs.data,
+                weekly.channel.in_(dChannels),
                 (searchParams[3] <= monthly.freq) & (monthly.freq <= searchParams[4]),
                 (searchParams[5] <= monthly.coh) & (monthly.coh <= searchParams[6]),
                 (sDate <= monthly.time) & (monthly.time <= eDate)
-            ).limit(25000)
+            ).limit(2500)
         
-        for l in lines: #For each line...
-            if len(dLines) < 2500: #Makes sure dLines does not swell too big, prevents breaking of page
-                #Set checks for each field to false
-                chCheck = False #Channel
-
-                if searchForm.channel.data in l.channel or searchForm.channel.data.upper() in l.channel or len(searchForm.channel.data) == 0: #and channel matches search query OR channel field is empty,
-                    chCheck = True #pass the check.
-                if chCheck: #If channel check is passed,
-                    dLines.append(l) #add line to desired lines list.
+        for l in lines:
+            dLines.append(l) #Add queried lines to desired lines list.
 
         #Now that desired lines are generated, begin sorting
         subList = [] #Container for simplified dLines
@@ -264,7 +268,7 @@ def index():
 @app.route("/download")
 def download():
 
-    csv = str('Type: ,') + str('Run: ' + run + ',') + str('Observatory: ' + obs + ',') + str('Time Range: ' + stTime + ' to ' + enTime + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
+    csv = str('Run: ' + run + ',') + str('Observatory: ' + obs + ',') + str('Time Range: ' + stTime + ' to ' + enTime + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
     for line in dLines:
         csv = csv + str(line) + '\n'
     csv = csv.encode()
