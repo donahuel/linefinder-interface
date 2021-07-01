@@ -166,7 +166,6 @@ def index():
             ).limit(25000)
         
         for l in lines: #For each line...
-            print(l)
             if len(dLines) < 2500: #Makes sure dLines does not swell too big, prevents breaking of page
                 #Set checks for each field to false
                 obCheck = False #Observatory
