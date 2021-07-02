@@ -1,11 +1,12 @@
 #This file produces a web interface which searches a database populated by init.py for line objects and displays the results on a webpage.
-#Authors: Larry Donahue, Vincent He Malachy Bloom, Michael Yang
+#Authors: Larry Donahue, Vincent He, Malachy Bloom, Michael Yang
 
 from flask import Flask, render_template, request, Response, send_file
 from flask_sqlalchemy import SQLAlchemy
 from wtforms import Form, StringField
 import csv
 import time
+import math as m
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///line_finder.db'
@@ -268,7 +269,9 @@ def index():
 @app.route("/download")
 def download():
 
+    #Prepare top row of csv file
     csv = str('Run: ' + run + ',') + str('Observatory: ' + obs + ',') + str('Time Range: ' + stTime + ' to ' + enTime + ',') + str('Channel: ' + channel + ',') + str('Frequency: ' + freqLB + ' - ' + freqUB + ',') + str('Coherence: ' + cohLB + ' - ' + cohUB + ',') + '\n'
+    #Populate and encode csv file
     for line in dLines:
         csv = csv + str(line) + '\n'
     csv = csv.encode()
@@ -278,6 +281,21 @@ def download():
         mimetype="text/csv",
         headers={"Content-disposition":
                  "attachment; filename=Linefinder.csv"})
+
+@app.route("/plots/<path:filename>")
+def showPlot(filename):
+    #First, we have to generate the path to the plot we want to show. We do this in parts:
+    fileParts = filename.split("/")
+    fileParts[2] = fileParts[2].replace("-", "_") #Make week format match what we've got in the plots folder.
+    uFreq = int(m.ceil(float(fileParts[4]) / 100.0)) * 100 #Gets next highest hundred for the frequency, since plots are shown in bands of 100Hz
+    lFreq = int(m.floor(float(fileParts[4]) / 100.0)) * 100 #Gets next lowest hundred for the frequency, since plots are shown in bands of 100Hz
+    
+    #After all this, we get the path to the plot:
+    plotpath = "/static/plots/" + fileParts[0] + "/" + fileParts[1] + "/plots_" + fileParts[2] + "/" + fileParts[3] + "/spec_" + str(lFreq) + ".00_" + str(uFreq) + ".00.png"
+    print(plotpath)
+
+    #We then show the plot to the user:
+    return render_template('plotdisplay.html', path=plotpath, type=fileParts[0], obs=fileParts[1], week=fileParts[2].replace("_","-"), chan=fileParts[3], upper=uFreq, lower=lFreq, freq=fileParts[4])
 
 if __name__ == '__main__':
     app.run()
