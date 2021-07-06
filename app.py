@@ -297,5 +297,9 @@ def showPlot(filename):
     #We then show the plot to the user:
     return render_template('plotdisplay.html', path=plotpath, type=fileParts[0], obs=fileParts[1], week=fileParts[2].replace("_","-"), chan=fileParts[3], upper=uFreq, lower=lFreq, freq=fileParts[4])
 
+@app.route("/channels")
+def channels():
+    return send_file("channels.txt")
+
 if __name__ == '__main__':
     app.run()
