@@ -7,10 +7,11 @@ import os
 import math as m
 import time as t
 
-def skim(verbose):
+def skim(verbose, db_exists):
     #Skims files in data folder and stores read line objects in a list, which is returned.
-    db.drop_all()
-    db.create_all()       
+    if not db_exists: #If the database doesn't exist, create the tables. Otherwise, don't drop what we have.
+        db.drop_all()
+        db.create_all()       
 
     file_list = []
     for subdir, dirs, files in os.walk(rootdir + "/data"):
@@ -155,11 +156,22 @@ save_exists = False
 for dirs in os.listdir(rootdir):
     if dirs == "temp":
         save_exists = True
+        if verbosity:
+            print("temp directory exists.")
+        break
+        
+#Check if database already exists
+db_exists = False
+for files in os.listdir(rootdir):
+    if files == "line_finder.db":
+        db_exists = True
+        if verbosity:
+            print("Database line_finder.db exists.")
         break
 
 #Generate line list to commit to database. If a temp directory exists, pull sig lines from there as built into populate(). If not, read data directory.
 if not save_exists:
-    siglines = skim(verbosity)
+    siglines = skim(verbosity, db_exists)
     print("Beginning commitment of significant lines to the database.")
     del siglines #We no longer need this list.
 else:
